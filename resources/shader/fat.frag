@@ -25,6 +25,7 @@ void main() {
     }
     f_color = final_colour;
     f_color *= 1.0;
+    f_color.a = 0.2;
 }
 
 

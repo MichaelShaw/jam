@@ -45,6 +45,17 @@ gfx_defines!{
         out_color: gfx::RenderTarget<ColorFormat> = "f_color",
         out_depth: gfx::DepthTarget<DepthFormat> = gfx::preset::depth::LESS_EQUAL_WRITE,
     }
+
+     pipeline pipe_alpha {
+        vbuf: gfx::VertexBuffer<Vertex> = (),
+        u_texture_array: gfx::TextureSampler<[f32; 4]> = "u_texture_array",
+        u_matrix: gfx::Global<[[f32; 4]; 4]> = "u_matrix",
+        u_color: gfx::Global<[f32; 4]> = "u_color",
+        u_alpha_minimum : gfx::Global<f32> = "u_alpha_minimum",
+        u_sun_direction: gfx::Global<[f32; 3]> = "u_sun_direction",
+        out_color: gfx::BlendTarget<ColorFormat> = ("f_color", gfx::state::ColorMask::all(), gfx::preset::blend::ALPHA),
+        out_depth: gfx::DepthTarget<DepthFormat> = gfx::preset::depth::LESS_EQUAL_TEST,
+    }
 }
 
 const CLEAR_COLOR: [f32; 4] = [0.1, 0.2, 0.3, 1.0];
@@ -114,6 +125,7 @@ use render::texture::texture_array::TextureDirectory;
 extern crate gfx_device_gl;
 
 type PipelineState = gfx::PipelineState<gfx_device_gl::Resources, pipe::Meta>;
+type PipelineStateAlpha = gfx::PipelineState<gfx_device_gl::Resources, pipe_alpha::Meta>;
 
 
 use std::io;
@@ -155,7 +167,8 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     let (window, mut device, mut factory, main_color, main_depth) = gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder);
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
-    let mut pso : Option<PipelineState> = None;
+    // let mut pso : Option<PipelineState> = None;
+    let mut pso : Option<PipelineStateAlpha> = None;
     
     let texture_data = texture_directory.load().expect("texture data");
 
@@ -194,7 +207,18 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     // let (empty_vertex_buffer, _) = factory.create_vertex_buffer_with_slice(&[], ());
     // data
-    let mut data = pipe::Data {
+    // let mut data = pipe::Data {
+    //     vbuf: empty_vertex_buffer,
+    //     u_texture_array: (texture_view, sampler), // resource, sampler
+    //     u_matrix: down_size_m4(default_transform),
+    //     u_color: WHITE_COLOR,
+    //     u_alpha_minimum: 0.0,
+    //     u_sun_direction: Z_UP,
+    //     out_color: main_color,
+    //     out_depth: main_depth,
+    // };
+
+    let mut data = pipe_alpha::Data {
         vbuf: empty_vertex_buffer,
         u_texture_array: (texture_view, sampler), // resource, sampler
         u_matrix: down_size_m4(default_transform),
@@ -244,7 +268,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
                 factory.create_pipeline_simple(
                     &shader_data.vertex_data,
                     &shader_data.fragment_data,
-                    pipe::new()
+                    pipe_alpha::new()
                 ).map_err(UnifiedError::Pipeline)
             });
             match pso_result {
