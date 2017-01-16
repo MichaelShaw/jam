@@ -33,7 +33,6 @@ fn main() {
         pixels_per_unit: 16.0,
         n: 0,
     };
-
     
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     
