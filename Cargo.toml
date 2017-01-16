@@ -13,7 +13,8 @@ cgmath = "*"
 fnv = "*"
 notify = "*"
 time = "*"
-ears = "*"
+lewton = "*"
+alto = "*"
 
 [[example]]
 name = "commands"
