@@ -1,0 +1,20 @@
+[package]
+name = "jam"
+version = "0.1.0"
+authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
+
+[dependencies]
+gfx = "0.13"
+glutin ="*"
+gfx_window_glutin = "*"
+gfx_device_gl = "*"
+image = "*"
+cgmath = "*"
+fnv = "*"
+notify = "*"
+time = "*"
+ears = "*"
+
+[[example]]
+name = "commands"
+path = "examples/commands/main.rs"
