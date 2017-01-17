@@ -167,8 +167,8 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     let (window, mut device, mut factory, main_color, main_depth) = gfx_window_glutin::init::<ColorFormat, DepthFormat>(builder);
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
-    // let mut pso : Option<PipelineState> = None;
-    let mut pso : Option<PipelineStateAlpha> = None;
+    let mut pso : Option<PipelineState> = None;
+    // let mut pso : Option<PipelineStateAlpha> = None;
     
     let texture_data = texture_directory.load().expect("texture data");
 
@@ -218,7 +218,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     //     out_depth: main_depth,
     // };
 
-    let mut data = pipe_alpha::Data {
+    let mut data = pipe::Data {
         vbuf: empty_vertex_buffer,
         u_texture_array: (texture_view, sampler), // resource, sampler
         u_matrix: down_size_m4(default_transform),
@@ -268,7 +268,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
                 factory.create_pipeline_simple(
                     &shader_data.vertex_data,
                     &shader_data.fragment_data,
-                    pipe_alpha::new()
+                    pipe::new()
                 ).map_err(UnifiedError::Pipeline)
             });
             match pso_result {
