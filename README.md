@@ -9,7 +9,6 @@ cargo run --example commands
 
 # Todo
 - Make launch application return a result and try! (we'd have to translate errors)
-- Add notion of time, call "render" with a time delta.
 - Fix Texture/render directions
 - Alpha blending (look at gfx-rs particle exapmle, requires new pipeline)
 - Work out better placeholder geometry (so we can cut the Tesselator creation in fatter.rs)

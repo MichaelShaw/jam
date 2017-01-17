@@ -1,5 +1,4 @@
 extern crate gfx;
-extern crate cgmath;
 // extern crate image;
 
 use std::fmt;
@@ -11,6 +10,8 @@ use glutin;
 use glutin::GlRequest;
 use glutin::GlProfile;
 use glutin::Api;
+
+use time;
 
 use gfx::traits::FactoryExt;
 use gfx::Device;
@@ -97,11 +98,12 @@ pub enum Command {
 }
 
 
+pub type Seconds = f64;
 pub type Dimensions = (u32, u32);
 
 pub trait Application {
     fn new(&mut self);
-    fn render(&mut self, input:&InputState, dimensions:Dimensions) -> Vec<Command>; // sizing (window) ?
+    fn render(&mut self, input:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command>; // sizing (window) ?
 }
 
 impl fmt::Debug for Command {
@@ -237,7 +239,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     let mut vertex_buffers : HashMap<BufferKey, Vertices<gfx_device_gl::Resources>> = HashMap::default();
     
-    
+    let mut last_time = time::precise_time_ns();
     
     'main: loop {
         // CHECK RESOURCES
@@ -300,7 +302,12 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
         
         let deeps = window.hidpi_factor();
         
-        let commands = app.render(&input_state, ((ww as f32 / deeps) as u32, (hh as f32  / deeps) as u32));
+
+        let now  = time::precise_time_ns();
+        let delta = ((now - last_time) as f64) / 1000000000.0;
+        let commands = app.render(&input_state, ((ww as f32 / deeps) as u32, (hh as f32  / deeps) as u32), delta);
+        last_time = now;
+
 
         encoder.clear(&data.out_color, CLEAR_COLOR);
         encoder.clear_depth(&data.out_depth, 1.0);

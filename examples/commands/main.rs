@@ -8,7 +8,7 @@ use jam::render::texture::texture_array::TextureDirectory;
 use jam::input::InputState;
 use jam::render::shader::fatter;
 use jam::render::shader::fatter::Command::*;
-use jam::render::shader::fatter::{Dimensions, Application, Command, Uniforms};
+use jam::render::shader::fatter::{Seconds, Dimensions, Application, Command, Uniforms};
 use jam::camera::Camera;
 use jam::color;
 use jam::color::Color;
@@ -81,7 +81,8 @@ impl Application for App {
         println!("new! => {:?}", self.name);
     }
 
-    fn render(&mut self, input_state:&InputState, dimensions:Dimensions) -> Vec<Command> {
+    fn render(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command> {
+        println!("delta time is -> {:?}", delta_time);
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
