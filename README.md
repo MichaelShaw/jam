@@ -8,6 +8,7 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
+- Test our sound decoding through playing a hundred various oggs in sequence.
 - Make launch application return a result and try! (we'd have to translate errors)
 - Fix Texture/render directions
 - We should probably have a locals struct, simple so we can re-use the struct between pipelines (blend/non-blending versions)

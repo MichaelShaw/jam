@@ -12,9 +12,11 @@ extern crate lewton;
 use lewton::VorbisError;
 use lewton::inside_ogg::OggStreamReader;
 
-use std::path::Path;
+use std::fs;
 use std::fs::File;
 use std::iter::Extend;
+
+use std::path::{Path,PathBuf};
 
 pub type SampleRate = u32;
 
@@ -23,6 +25,12 @@ struct Sound {
     data : Vec<i16>,
     sample_rate: u32,
     channels: u8,
+}
+
+impl Sound {
+    fn duration(&self) -> f32 {
+        (self.data.len() as f32) / (self.sample_rate as f32)
+    }
 }
 
 fn load_ogg<P: AsRef<Path>>(path: P) -> Result<Sound, VorbisError> {
@@ -61,39 +69,52 @@ fn main() {
 	let dev = alto.open(None).unwrap();
 	let ctx = dev.new_context(None).unwrap();
 
-    let sound = load_ogg("../resources/sound/coins.ogg").unwrap();
-    // println!("sound -> {:?}", sound);
-    println!("gonna get buff");
-    let mut buf = ctx.new_buffer().unwrap();
-    println!("got buff");
-    buf.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32).unwrap();
-    let buf = Arc::new(buf);
-
     let mut src = ctx.new_static_source().unwrap();
-    src.set_buffer(buf).unwrap();
-    src.set_looping(true).unwrap();
+    src.set_looping(false).unwrap();
 
-    println!("Playing static 440hz sine wave...");
-    src.play().unwrap();
+    let ogg_path = PathBuf::from("Z:\\rust.workspace\\oggs");
+    for entry in fs::read_dir(ogg_path).unwrap() {
+        let ent = entry.unwrap();
 
-    std::thread::sleep(std::time::Duration::new(2, 0));
-    // {
-	// 	let mut buf = ctx.new_buffer().unwrap();
-	// 	// buf.set_data(SinWave::new(44_000 / 440, 0.25).render().take(44_000 / 440).collect::<Vec<_>>(), 44_000).unwrap();
-	// 	let buf = Arc::new(buf);
+        println!("entry -> {:?}", ent);
 
-	// 	let mut src = ctx.new_static_source().unwrap();
-	// 	src.set_buffer(buf).unwrap();
-	// 	src.set_looping(true).unwrap();
+        let sound = load_ogg(ent.path()).unwrap();
 
-	// 	println!("Playing static 440hz sine wave...");
-	// 	src.play().unwrap();
+        let mut buf = ctx.new_buffer().unwrap();
+        
 
-	// 	std::thread::sleep(std::time::Duration::new(2, 0));
-	// }
+        let duration = sound.duration();
+        if sound.channels == 1 {
+            buf.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32).unwrap();
+        } else if sound.channels == 2 {
+            buf.set_data::<Stereo<i16>, _>(sound.data, sound.sample_rate as i32).unwrap();
+        } else {
+            println!("uhh, sound has a weird count of channels -> {:?}", sound.channels);
+        }
+        
+        let buf = Arc::new(buf);
+        src.set_buffer(buf).unwrap();
+        
+        
+        src.play().unwrap();
+        let play_duration = min(duration + 1.0, 1.0) as u64;
+        
+        
+        println!("Playing for -> {:?}", play_duration);
+        std::thread::sleep(std::time::Duration::new(play_duration, 0));
+        src.stop().unwrap();
+    }
+
+    
+    // println!("sound -> {:?}", sound);
+    
+  
+  
 }
 
+fn min<T:PartialOrd>(a:T,b:T)->T { if a<b{a}else{b}}
 
+fn max<T:PartialOrd>(a:T,b:T)->T { if a>b{a}else{b}}
 
 struct SinWave {
 	len: i32,
