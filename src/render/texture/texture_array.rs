@@ -151,6 +151,7 @@ impl TextureArrayData {
         let bind = gfx::SHADER_RESOURCE;
         let cty = gfx::format::ChannelType::Srgb;
 
+
         factory.create_texture(self.kind(), 1, bind, gfx::memory::Usage::Dynamic, Some(cty))
     }
 }
