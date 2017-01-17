@@ -61,7 +61,7 @@ fn main() {
 	let dev = alto.open(None).unwrap();
 	let ctx = dev.new_context(None).unwrap();
 
-    let sound = load_ogg("../coins.ogg").unwrap();
+    let sound = load_ogg("../resources/sound/coins.ogg").unwrap();
     // println!("sound -> {:?}", sound);
     println!("gonna get buff");
     let mut buf = ctx.new_buffer().unwrap();
