@@ -82,7 +82,6 @@ impl Application for App {
     }
 
     fn render(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command> {
-        println!("delta time is -> {:?}", delta_time);
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
