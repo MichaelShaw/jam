@@ -15,7 +15,12 @@ notify = "*"
 time = "*"
 lewton = "*"
 alto = "*"
+ogg = "*"
 
 [[example]]
 name = "commands"
 path = "examples/commands/main.rs"
+
+[[example]]
+name = "sound"
+path = "examples/sound/main.rs"
