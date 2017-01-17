@@ -71,7 +71,7 @@ pub fn read_directory_paths(path:&Path) -> io::Result<Vec<PathBuf>> {
 }
 
 pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
-    let mut file_data : Vec<Vec<[u8; 4]>> = Vec::new();
+    let mut file_data : Vec<Vec<u8>> = Vec::new();
 
     let mut dimensions : Option<Dimensions> = None;
 
@@ -95,14 +95,9 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
             dimensions = Some((w, h));
         }
         
-        let image_buffer = img.to_rgba();
-        let mut data : Vec<[u8; 4]> = Vec::new();
-
-        for pixel in image_buffer.pixels() {
-            data.push(pixel.data);
-        }
-
-        file_data.push(data);
+        let image_buffer = img.to_rgba().into_raw();
+        
+        file_data.push(image_buffer);
     }
 
     if let Some(d)  = dimensions {
@@ -125,7 +120,7 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
 // note: we can throw this away post load ... it's a temporary construct    
 pub struct TextureArrayData {
     pub dimensions : Dimensions,
-    pub data: Vec<Vec<[u8; 4]>>,
+    pub data: Vec<Vec<u8>>,
 }
 
 impl fmt::Debug for TextureArrayData {
@@ -138,6 +133,7 @@ use gfx;
 use gfx::handle::Texture;
 use gfx::texture; 
 use gfx::format::SurfaceTyped;
+use gfx::handle::ShaderResourceView;
 
 impl TextureArrayData {
     pub fn kind(&self) -> gfx::texture::Kind {
@@ -146,13 +142,11 @@ impl TextureArrayData {
         texture::Kind::D2Array(width, height, layers, texture::AaMode::Single)
     } 
 
-    pub fn load<R, F, S>(&self, factory: &mut F) -> Result<Texture<R, S>, texture::CreationError>
-     where R: gfx::Resources, F: gfx::Factory<R>, S: SurfaceTyped {
-        let bind = gfx::SHADER_RESOURCE;
-        let cty = gfx::format::ChannelType::Srgb;
-
-
-        factory.create_texture(self.kind(), 1, bind, gfx::memory::Usage::Dynamic, Some(cty))
+    pub fn load<R, F, T>(&self, factory: &mut F) -> Result<(Texture<R, T::Surface>, ShaderResourceView<R, T::View>), gfx::CombinedError>
+     where R: gfx::Resources, F: gfx::Factory<R>, T: gfx::format::TextureFormat {
+        let some_shit : Vec<_> = self.data.iter().map(|d| &d[..]).collect();
+        
+        factory.create_texture_immutable_u8::<T>(self.kind(), &some_shit)
     }
 }
 

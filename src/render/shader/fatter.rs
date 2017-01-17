@@ -173,11 +173,13 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     let texture_data = texture_directory.load().expect("texture data");
 
     let kind = texture_data.kind();
-    let texture : gfx::handle::Texture<_, gfx::format::R8_G8_B8_A8> = texture_data.load(&mut factory).expect("a damn texture");
-    let texture_view = factory.view_texture_as_shader_resource::<gfx::format::Rgba8>(&texture, 
-                                                            (0, 0),
-                                                            gfx::format::Swizzle::new()).expect("a fuckin view");
-    let mut texture_buffered = false;
+    println!(":: pre create");
+    // gfx::format::R8_G8_B8_A8
+    let mut texture_pair = texture_data.load::<_,_,gfx::format::Rgba8>(&mut factory).expect("a damn texture");
+    println!(":: post create");
+  
+    // texture_view = 5;
+    let mut texture_buffered = true;
     
 
     let sampler_info = texture::SamplerInfo::new(texture::FilterMethod::Scale, texture::WrapMode::Clamp);
@@ -186,7 +188,6 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     let default_transform : [[f64; 4]; 4] = Mat4::identity().into();
 
     use render::quads::GeometryTesselator;
-
 
     let base_pixels_per_unit = 16.0_f64;
     let units_per_pixel = 1.0 / base_pixels_per_unit;
@@ -220,7 +221,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     let mut data = pipe::Data {
         vbuf: empty_vertex_buffer,
-        u_texture_array: (texture_view, sampler), // resource, sampler
+        u_texture_array: (texture_pair.1, sampler), // resource, sampler
         u_matrix: down_size_m4(default_transform),
         u_color: WHITE_COLOR,
         u_alpha_minimum: 0.0,
@@ -277,35 +278,12 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
             }
         }
 
-        if reload_texture {
-            println!("reload texture!");
+        if reload_texture { // reload_texture
             let new_texture_data = texture_directory.load();
             match new_texture_data {
-                Ok(data) => {
-                    if data.kind() == kind {
-                        println!("kind is ok!");
-                        let (w, h, _, _) = kind.get_dimensions();
-                        for (layer, tex_data) in data.data.iter().enumerate() {
-                            let image_info : gfx::texture::NewImageInfo = ImageInfoCommon {
-                                xoffset: 0,
-                                yoffset: 0,
-                                zoffset: layer as u16,
-                                width: w,
-                                height: h,
-                                depth: 1,
-                                format: (),
-                                mipmap: 0,
-                            };
-                            encoder.update_texture::<gfx::format::R8_G8_B8_A8, gfx::format::Rgba8>(
-                                &texture,
-                                None,
-                                image_info,
-                                &tex_data).unwrap(); // first layer only for now
-                        }
-                        texture_buffered = true;
-                    } else {
-                        println!("kind isnt ok");
-                    }
+                Ok(texture_data) => {
+                    texture_pair = texture_data.load::<_,_,gfx::format::Rgba8>(&mut factory).expect("a damn texture");
+                    data.u_texture_array.0 = texture_pair.1;
                 },
                 Err(err) => println!("texture load error -> {:?}", err),
             }
