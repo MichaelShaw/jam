@@ -26,9 +26,6 @@ pub mod render {
 pub mod camera;
 pub mod input;
 pub mod geometry;
-pub mod game {
-    pub mod simple;
-}
 pub mod spring;
 pub mod audio;
 pub mod color;
