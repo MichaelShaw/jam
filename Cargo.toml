@@ -24,3 +24,7 @@ path = "examples/commands/main.rs"
 [[example]]
 name = "sound"
 path = "examples/sound/main.rs"
+
+[[example]]
+name = "sound_engine"
+path = "examples/sound_engine/main.rs"

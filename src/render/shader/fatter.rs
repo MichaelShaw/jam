@@ -47,7 +47,7 @@ gfx_defines!{
         out_depth: gfx::DepthTarget<DepthFormat> = gfx::preset::depth::LESS_EQUAL_WRITE,
     }
 
-     pipeline pipe_alpha {
+    pipeline pipe_alpha {
         vbuf: gfx::VertexBuffer<Vertex> = (),
         u_texture_array: gfx::TextureSampler<[f32; 4]> = "u_texture_array",
         u_matrix: gfx::Global<[[f32; 4]; 4]> = "u_matrix",
@@ -96,7 +96,6 @@ pub enum Command {
     DrawNew { key: Option<BufferKey>, vertices: BufferData, uniforms: Uniforms },
     Close,
 }
-
 
 pub type Seconds = f64;
 pub type Dimensions = (u32, u32);

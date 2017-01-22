@@ -8,6 +8,10 @@ extern crate glutin;
 
 extern crate time;
 
+extern crate alto;
+extern crate ogg;
+extern crate lewton;
+
 extern crate cgmath;
 extern crate image;
 extern crate fnv;
