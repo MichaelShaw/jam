@@ -6,5 +6,5 @@ extern crate jam;
 use jam::audio::*;
 
 fn main() {
-    let something = create_context();
+    let something = do_it();
 }
