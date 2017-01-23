@@ -9,19 +9,19 @@ use std::path::{Path,PathBuf};
 use ogg;
 
 #[derive(Clone, Debug)]
-struct Sound {
-    data : Vec<i16>,
-    sample_rate: u32,
-    channels: u8,
+pub struct Sound {
+    pub data : Vec<i16>,
+    pub sample_rate: u32,
+    pub channels: u8,
 }
 
 impl Sound {
-    fn duration(&self) -> f32 {
+    pub fn duration(&self) -> f32 {
         (self.data.len() as f32) / (self.sample_rate as f32)
     }
 }
 
-fn load_ogg<P: AsRef<Path>>(path: P) -> Result<Sound, VorbisError> {
+pub fn load_ogg<P: AsRef<Path>>(path: P) -> Result<Sound, VorbisError> {
     let f = try!(File::open(path));
 
 	// Prepare the reading

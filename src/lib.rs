@@ -51,6 +51,7 @@ pub enum JamError {
     Vorbis(lewton::VorbisError),
     Alto(alto::AltoError),
     FileDoesntExist(PathBuf),
+    TooManyChannels,
 }
 
 

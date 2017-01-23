@@ -12,7 +12,7 @@ fn main() {
     let ctx = dev.new_context(None).unwrap();
     let mut cb = jam::audio::context::create_sound_context(&ctx, "resources/sound", "ogg");
     cb.create_sources(32, 4).unwrap();
-    cb.load_sound("teleport").expect("to load teleport sound");
-    cb.load_sound("water").expect("to load water sound");
+    cb.load_sound("teleport", 1.0).expect("to load teleport sound");
+    cb.load_sound("water", 1.0).expect("to load water sound");
 
 }

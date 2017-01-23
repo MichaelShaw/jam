@@ -1,8 +1,11 @@
 use alto;
 use alto::{Alto, Device, Context, StaticSource, Buffer, SourceTrait};
+use alto::{Mono, Stereo};
 
 use std::sync::Arc;
 use std::path::{PathBuf};
+
+use super::load::load_ogg;
 
 use Vec3;
 use HashMap;
@@ -45,7 +48,7 @@ pub struct SoundSource<'a> {
 
 pub struct SoundBinding {
     pub event_id: SoundEventId,
-    pub sound_Event: SoundEvent,
+    pub sound_event: SoundEvent,
 }
 
 #[derive(Clone)]
@@ -95,14 +98,36 @@ impl<'a> SoundContext<'a> {
         Ok(())
     }
 
-    pub fn load_sound(&mut self, path: &str) -> JamResult<()> {
+    pub fn load_sound(&mut self, name: &str, gain: f32) -> JamResult<()> {
         let mut full_path = self.path.clone();
-        full_path.push(path);
+        full_path.push(name);
         full_path.set_extension(&self.extension);
 
         println!("full path -> {:?}", full_path);
         if full_path.exists() {
             println!("path exists :D");
+
+            println!("preload");
+            let sound = try!(load_ogg(&full_path).map_err(JamError::Vorbis));
+            println!("post load");
+            let mut buffer = try!(self.context.new_buffer().map_err(JamError::Alto));
+            println!("post alloc");
+
+            let duration = sound.duration();
+            println!("pre");
+            if sound.channels == 1 {
+                try!(buffer.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32).map_err(JamError::Alto));
+            } else if sound.channels == 2 {
+                try!(buffer.set_data::<Stereo<i16>, _>(sound.data, sound.sample_rate as i32).map_err(JamError::Alto));
+            } else {
+                return Err(JamError::TooManyChannels);
+            }
+            println!("post");
+               
+            let arc_buffer = Arc::new(buffer);
+            
+            self.buffers.insert(name.into(), SoundBuffer{ inner: arc_buffer, gain: gain, duration: duration });
+
             Ok(())    
         } else {
             Err(JamError::FileDoesntExist(full_path))
@@ -113,7 +138,7 @@ impl<'a> SoundContext<'a> {
 /*
 
     let buffer = Arc::new(cb.context.new_buffer().unwrap());
-    cb.buffers.insert("bullshit".into(), SoundBuffer{ inner: buffer, gain: 1.0, duration: 1.0 });
+    
 
     if let Some(source) = cb.sources.first_mut() {
         if let Some(bb) = cb.buffers.get("bullshit") {
