@@ -13,6 +13,7 @@ use glutin::Api;
 
 use time;
 
+
 use gfx::traits::FactoryExt;
 use gfx::Device;
 use gfx::texture;
@@ -23,6 +24,7 @@ use cgmath::SquareMatrix;
 
 pub use {DepthFormat, ColorFormat};
 use {Mat4, Vec3};
+use JamError;
 use input;
 use input::InputState;
 use color::Color;
@@ -128,14 +130,6 @@ extern crate gfx_device_gl;
 type PipelineState = gfx::PipelineState<gfx_device_gl::Resources, pipe::Meta>;
 type PipelineStateAlpha = gfx::PipelineState<gfx_device_gl::Resources, pipe_alpha::Meta>;
 
-
-use std::io;
-
-#[derive(Debug)]
-enum UnifiedError {
-    IO(io::Error),
-    Pipeline(gfx::PipelineStateError<String>),
-}
 
 struct Vertices<R> where R: gfx::Resources {
     buffer : gfx::handle::Buffer<R, Vertex>,
@@ -266,12 +260,12 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
         if reload_pso {
             println!("reloading pso!");
-            let pso_result = shader_pair.load().map_err(UnifiedError::IO).and_then(|shader_data| {
+            let pso_result = shader_pair.load().map_err(JamError::IO).and_then(|shader_data| {
                 factory.create_pipeline_simple(
                     &shader_data.vertex_data,
                     &shader_data.fragment_data,
                     pipe::new()
-                ).map_err(UnifiedError::Pipeline)
+                ).map_err(JamError::Pipeline)
             });
             match pso_result {
                 Ok(ps) => pso = Some(ps),

@@ -33,12 +33,26 @@ pub mod color;
 use fnv::FnvHasher;
 use std::collections::{HashMap as StdHashMap, HashSet as StdHashSet};
 use std::hash::BuildHasherDefault;
+use std::io;
+use std::path::PathBuf;
 
 pub type HashMap<K, V> = StdHashMap<K, V, BuildHasherDefault<FnvHasher>>;
 pub type HashSet<V> = StdHashSet<V, BuildHasherDefault<FnvHasher>>;
 
 pub type ColorFormat = gfx::format::Rgba8;
 pub type DepthFormat = gfx::format::DepthStencil;
+
+pub type JamResult<T> = Result<T, JamError>;
+
+#[derive(Debug)]
+pub enum JamError {
+    IO(io::Error),
+    Pipeline(gfx::PipelineStateError<String>),
+    Vorbis(lewton::VorbisError),
+    Alto(alto::AltoError),
+    FileDoesntExist(PathBuf),
+}
+
 
 pub fn clamp<T : PartialOrd>(n:T, min:T, max:T) -> T {
     if n < min {
