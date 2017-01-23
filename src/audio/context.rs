@@ -7,10 +7,11 @@ use std::path::{PathBuf};
 
 use super::load::load_ogg;
 
-use Vec3;
+use Vec3f;
 use HashMap;
 use JamResult;
 use JamError;
+use cgmath::Zero;
 
 pub type SoundName = String;
 
@@ -29,6 +30,7 @@ pub struct SoundContext<'a> {
     pub buffers: HashMap<SoundName, SoundBuffer<'a>>,
     pub next_event : SoundEventId,
     pub master_gain : Gain,
+    pub distance_model : DistanceModel,
     pub listener : Listener,
 }
 
@@ -39,6 +41,7 @@ pub struct SoundBuffer<'a> {
 }
 
 // an index to a source + binding
+#[derive(Debug, Clone, Copy)]
 pub struct SoundSourceLoan {
     pub source_id : usize,
     pub event_id : SoundEventId,
@@ -46,38 +49,49 @@ pub struct SoundSourceLoan {
 
 pub struct SoundSource<'a> {
     static_source: StaticSource<'a, 'a>,
-    pub current_event: Option<SoundBinding>,
+    pub current_binding: Option<SoundBinding>,
 }
 
 pub struct StreamingSoundSource<'a> {
     streaming_source: StreamingSource<'a, 'a>
 }
 
+#[derive(Debug)]
 pub struct SoundBinding {
     pub event_id: SoundEventId,
     pub sound_event: SoundEvent,
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct SoundEvent {
     pub name: String,
-    pub position: Vec3,
+    pub position: Vec3f,
     pub gain: f32,
     pub pitch: f32,
     pub attenuation: f32,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Listener {
-    pub position: Vec3,
-    pub velocity: Vec3,
-    pub orientation_up: Vec3,
-    pub orientation_forward: Vec3,
+    pub position: Vec3f,
+    pub velocity: Vec3f,
+    pub orientation_up: Vec3f,
+    pub orientation_forward: Vec3f,
+}
+
+impl Listener {
+    pub fn default() -> Listener {
+        Listener {
+            position: Vec3f::zero(),
+            velocity: Vec3f::zero(),
+            orientation_up: Vec3f::new(0.0, 1.0, 0.0),
+            orientation_forward: Vec3f::new(0.0, 0.0, -1.0),
+        }
+    }
 }
 
 pub fn create_sound_context<'a>(context: &'a Context<'a>, path:&str, extension: &str) -> SoundContext<'a> {
     // we should probably create our sources here
-    use cgmath::prelude::Zero;
     SoundContext {
         context: context,
         path: PathBuf::from(path),
@@ -87,27 +101,50 @@ pub fn create_sound_context<'a>(context: &'a Context<'a>, path:&str, extension: 
         buffers: HashMap::default(),
         next_event: 0,
         master_gain: 1.0,
-        listener: Listener {
-            position: Vec3::zero(),
-            velocity: Vec3::zero(),
-            orientation_up: Vec3::new(0.0, 1.0, 0.0),
-            orientation_forward: Vec3::new(0.0, 0.0, -1.0),
-        },
+        distance_model: alto::DistanceModel::None,
+        listener: Listener::default() ,
     }
 }
 
 impl<'a> SoundContext<'a> {
+    pub fn set_gain(&mut self, gain: Gain) -> JamResult<()> {
+        try!(self.context.set_gain(gain).map_err(JamError::Alto));
+        self.master_gain = gain;
+        Ok(())
+    }
+
+    pub fn set_listener(&mut self, listener: Listener) -> JamResult<()> {
+        try!(self.context.set_position(listener.position).map_err(JamError::Alto));
+        try!(self.context.set_velocity(listener.velocity).map_err(JamError::Alto));
+        try!(self.context.set_orientation::<[f32; 3]>(listener.orientation_forward.into(), listener.orientation_up.into()).map_err(JamError::Alto));
+
+        self.listener = listener;
+        
+        Ok(())
+    }
+
     pub fn create_sources(&mut self, static_sources: usize, streaming_sources: usize) -> JamResult<()> {
         for _ in 0..static_sources {
             let source = try!(self.context.new_static_source().map_err(JamError::Alto));
-            self.sources.push(SoundSource { static_source: source, current_event: None});
+            self.sources.push(SoundSource { static_source: source, current_binding: None});
         }
 
         for _ in 0..streaming_sources {
             let source = try!(self.context.new_streaming_source().map_err(JamError::Alto));
-            self.streaming_sources.push(StreamingSoundSource { streaming_source: source});
+            self.streaming_sources.push(StreamingSoundSource { streaming_source: source });
         }
 
+        Ok(())
+    }
+
+    pub fn purge(&mut self) -> JamResult<()> {
+        for source in self.sources.iter_mut() {
+            if source.current_binding.is_some() {
+                try!(source.static_source.stop().map_err(JamError::Alto));
+                source.current_binding = None;
+            }
+        }
+        self.buffers.clear();
         Ok(())
     }
 
@@ -138,18 +175,69 @@ impl<'a> SoundContext<'a> {
             Err(JamError::FileDoesntExist(full_path))
         }
     }
-}
 
-/*
+    pub fn next_event_id(&mut self) -> SoundEventId {
+        self.next_event += 1;
+        self.next_event
+    }
 
-    let buffer = Arc::new(cb.context.new_buffer().unwrap());
-    
+    pub fn clean_sources(&mut self) -> JamResult<u32> {
+        use alto::SourceState::*;
 
-    if let Some(source) = cb.sources.first_mut() {
-        if let Some(bb) = cb.buffers.get("bullshit") {
-            println!("we have bullshit");
-            source.static_source.set_buffer(Some(bb.inner.clone()));
+        let mut available_sources = 0;
+        for source in self.sources.iter_mut() {
+            if source.current_binding.is_some() {
+                let state = try!(source.static_source.state().map_err(JamError::Alto));
+                match state {
+                    Initial | Playing | Paused => (),
+                    Stopped => {
+                        source.current_binding = None;
+                        available_sources += 1;   
+                    },
+                };
+            } else {
+                available_sources += 1;
+            }
         }
-        source.static_source.play();
-        
-    }*/
+        Ok(available_sources)
+    }
+
+    pub fn set_distace_model(&mut self, distance_model: DistanceModel) -> JamResult<()> {
+        try!(self.context.set_distance_model(distance_model).map_err(JamError::Alto));
+        self.distance_model = distance_model;
+        Ok(())
+    }
+
+    pub fn play_event(&mut self, sound_event: SoundEvent) -> JamResult<SoundSourceLoan> {
+        if !self.buffers.contains_key(&sound_event.name) {
+            println!("sound is missing, attemping to load -> {:?}", &sound_event.name);
+            try!(self.load_sound(&sound_event.name, 1.0));
+        }
+
+        println!("playing -> {:?}", sound_event);
+
+        let event_id = self.next_event_id();
+
+        if let Some(buffer) = self.buffers.get(&sound_event.name) {
+            if let Some(source) = self.sources.iter_mut().filter(|src| src.current_binding.is_none()).next() {
+                try!(source.static_source.set_buffer(Some(buffer.inner.clone())).map_err(JamError::Alto));
+                try!(source.static_source.play().map_err(JamError::Alto));
+                try!(source.static_source.set_pitch(sound_event.pitch).map_err(JamError::Alto));
+                // POSITION
+                // GAIN
+                source.current_binding = Some(SoundBinding {
+                    event_id: event_id,
+                    sound_event: sound_event,
+                });
+                Ok(SoundSourceLoan {
+                    source_id : 0,
+                    event_id : event_id,
+                })
+            } else {
+                Err(JamError::NoFreeSource)
+            }
+        } else {
+            Err(JamError::NoSound(sound_event.name.into()))
+        }
+    }
+}

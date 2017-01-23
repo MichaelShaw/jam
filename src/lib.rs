@@ -52,6 +52,8 @@ pub enum JamError {
     Alto(alto::AltoError),
     FileDoesntExist(PathBuf),
     TooManyChannels,
+    NoSound(String),
+    NoFreeSource,
 }
 
 

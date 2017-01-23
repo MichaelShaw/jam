@@ -1,5 +1,3 @@
-use std::path::{PathBuf};
-
 use {HashMap, JamResult};
 
 use super::context::{DistanceModel, SoundEvent, Listener, SoundName, Gain, SoundContext};
@@ -20,11 +18,34 @@ pub fn process(context: &mut SoundContext, update:SoundEngineUpdate) -> JamResul
                 try!(context.load_sound(sound_name, gain));
             }
         },
-        DistanceModel(ref model) => (),
-        Render { master_gain, ref sounds, ref persistent_sounds, listener } => {
+        DistanceModel(model) => {
+            try!(context.set_distace_model(model))
+        },
+        Render { master_gain, sounds, persistent_sounds, listener } => {
+            if context.master_gain != master_gain {
+                println!("updating master gain to {:?}", master_gain);
+                try!(context.set_gain(master_gain));
+            }
+            if context.listener != listener {
+                println!("updating listener!");
+                try!(context.set_listener(listener));
+            }
+            if !sounds.is_empty() {
+                try!(context.clean_sources()); // a bit eager, but what the hell
+            }
+            for sound_event in sounds {
+                try!(context.play_event(sound_event));
+            }
+            if !persistent_sounds.is_empty() {
+                println!("got persistent sounds too -> {:?}", persistent_sounds);
+            }
+
             ()   
         },
-        Clear => (),
+        Clear => {
+            try!(context.purge());
+            ()
+        },
     };
     Ok(())
 }
