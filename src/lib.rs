@@ -55,6 +55,24 @@ pub enum JamError {
 }
 
 
+macro_rules! hashset {
+    ($($val: expr ),*) => {{
+         let mut set = HashSet::default();
+         $( set.insert( $val); )*
+         set
+    }}
+}
+
+
+macro_rules! hashmap {
+    ($( $key: expr => $val: expr ),*) => {{
+         let mut map = HashMap::default();
+         $( map.insert($key, $val); )*
+         map
+    }}
+}
+
+
 pub fn clamp<T : PartialOrd>(n:T, min:T, max:T) -> T {
     if n < min {
         min

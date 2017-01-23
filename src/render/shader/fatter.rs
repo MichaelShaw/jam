@@ -167,15 +167,13 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     
     let texture_data = texture_directory.load().expect("texture data");
 
-    let kind = texture_data.kind();
+    // let kind = texture_data.kind();
     println!(":: pre create");
     // gfx::format::R8_G8_B8_A8
     let mut texture_pair = texture_data.load::<_,_,gfx::format::Rgba8>(&mut factory).expect("a damn texture");
     println!(":: post create");
   
     // texture_view = 5;
-    let mut texture_buffered = true;
-    
 
     let sampler_info = texture::SamplerInfo::new(texture::FilterMethod::Scale, texture::WrapMode::Clamp);
     let sampler = factory.create_sampler(sampler_info);
@@ -225,8 +223,6 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
         out_depth: main_depth,
     };
 
-    use gfx::texture::ImageInfoCommon;       
-    
     // `gfx::handle::Buffer<render::shader::fatter::gfx_device_gl::Resources, render::shader::fatter::Vertex>
     use HashMap;
 
@@ -237,7 +233,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     'main: loop {
         // CHECK RESOURCES
         let mut reload_pso : bool = pso.is_none();
-        let mut reload_texture : bool = !texture_buffered;
+        let mut reload_texture : bool = false;
 
         'fs: loop {
             match rx.try_recv() {

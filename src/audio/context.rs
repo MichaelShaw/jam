@@ -1,5 +1,5 @@
 use alto;
-use alto::{Alto, Device, Context, StaticSource, Buffer, SourceTrait};
+use alto::{Context, StaticSource, StreamingSource, Buffer, SourceTrait};
 use alto::{Mono, Stereo};
 
 use std::sync::Arc;
@@ -16,6 +16,8 @@ pub type SoundName = String;
 
 pub type SoundEventId = u64; 
 
+pub type Gain = f32;
+
 pub type DistanceModel = alto::DistanceModel;
 
 pub struct SoundContext<'a> {
@@ -23,15 +25,16 @@ pub struct SoundContext<'a> {
     pub path: PathBuf,
     pub extension: String,
     pub sources: Vec<SoundSource<'a>>, 
+    pub streaming_sources: Vec<StreamingSoundSource<'a>>,
     pub buffers: HashMap<SoundName, SoundBuffer<'a>>,
     pub next_event : SoundEventId,
-    pub master_gain : f32,
+    pub master_gain : Gain,
     pub listener : Listener,
 }
 
 pub struct SoundBuffer<'a> {
     pub inner : Arc<Buffer<'a, 'a>>,
-    pub gain: f32,
+    pub gain: Gain,
     pub duration: f32,
 }
 
@@ -44,6 +47,10 @@ pub struct SoundSourceLoan {
 pub struct SoundSource<'a> {
     static_source: StaticSource<'a, 'a>,
     pub current_event: Option<SoundBinding>,
+}
+
+pub struct StreamingSoundSource<'a> {
+    streaming_source: StreamingSource<'a, 'a>
 }
 
 pub struct SoundBinding {
@@ -76,6 +83,7 @@ pub fn create_sound_context<'a>(context: &'a Context<'a>, path:&str, extension: 
         path: PathBuf::from(path),
         extension: String::from(extension),
         sources: Vec::new(),
+        streaming_sources: Vec::new(),
         buffers: HashMap::default(),
         next_event: 0,
         master_gain: 1.0,
@@ -95,6 +103,11 @@ impl<'a> SoundContext<'a> {
             self.sources.push(SoundSource { static_source: source, current_event: None});
         }
 
+        for _ in 0..streaming_sources {
+            let source = try!(self.context.new_streaming_source().map_err(JamError::Alto));
+            self.streaming_sources.push(StreamingSoundSource { streaming_source: source});
+        }
+
         Ok(())
     }
 
@@ -103,18 +116,11 @@ impl<'a> SoundContext<'a> {
         full_path.push(name);
         full_path.set_extension(&self.extension);
 
-        println!("full path -> {:?}", full_path);
         if full_path.exists() {
-            println!("path exists :D");
-
-            println!("preload");
             let sound = try!(load_ogg(&full_path).map_err(JamError::Vorbis));
-            println!("post load");
             let mut buffer = try!(self.context.new_buffer().map_err(JamError::Alto));
-            println!("post alloc");
-
+        
             let duration = sound.duration();
-            println!("pre");
             if sound.channels == 1 {
                 try!(buffer.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32).map_err(JamError::Alto));
             } else if sound.channels == 2 {
@@ -122,7 +128,6 @@ impl<'a> SoundContext<'a> {
             } else {
                 return Err(JamError::TooManyChannels);
             }
-            println!("post");
                
             let arc_buffer = Arc::new(buffer);
             

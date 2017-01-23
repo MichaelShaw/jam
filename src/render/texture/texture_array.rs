@@ -132,7 +132,6 @@ impl fmt::Debug for TextureArrayData {
 use gfx;
 use gfx::handle::Texture;
 use gfx::texture; 
-use gfx::format::SurfaceTyped;
 use gfx::handle::ShaderResourceView;
 
 impl TextureArrayData {

@@ -1,10 +1,8 @@
-use lewton;
-
 use lewton::VorbisError;
 use lewton::inside_ogg::OggStreamReader;
 
 use std::fs::File;
-use std::path::{Path,PathBuf};
+use std::path::{Path};
 
 use ogg;
 
