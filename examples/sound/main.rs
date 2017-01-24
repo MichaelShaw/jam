@@ -17,6 +17,9 @@ use std::path::{Path,PathBuf};
 
 pub type SampleRate = u32;
 
+
+
+
 fn main() {
 //    let alto = Alto::load_default().unwrap();
     let alto = Alto::load("./OpenAL64.dll").unwrap();

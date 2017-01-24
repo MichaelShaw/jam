@@ -37,7 +37,7 @@ pub struct SoundContext<'a> {
 pub struct SoundBuffer<'a> {
     pub inner : Arc<Buffer<'a, 'a>>,
     pub gain: Gain,
-    pub duration: f32,
+    pub duration: f32, // we could track last used .... could be interesting if nothing else
 }
 
 // an index to a source + binding
@@ -71,7 +71,17 @@ pub struct SoundEvent {
     pub attenuation: f32,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Clone, Debug)]
+pub struct PersistentSound {
+    pub name: String,
+    pub position: Vec3f,
+    pub gain: f32,
+    pub pitch: f32,
+    pub loop_sound: bool,
+    pub stream: bool,
+}
+
+#[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Listener {
     pub position: Vec3f,
     pub velocity: Vec3f,
