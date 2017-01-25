@@ -1,8 +1,10 @@
 use lewton::VorbisError;
 use lewton::inside_ogg::OggStreamReader;
 
+use std::fs;
 use std::fs::File;
 use std::path::{Path};
+use std::io;
 
 use ogg;
 
@@ -17,6 +19,20 @@ impl Sound {
     pub fn duration(&self) -> f32 {
         (self.data.len() as f32) / (self.sample_rate as f32)
     }
+}
+
+// forked load based on file size?? 
+
+pub fn file_size<P: AsRef<Path>>(path: P) -> io::Result<u64> {
+    let meta_data = try!(fs::metadata(path));
+    Ok(meta_data.len())
+}
+
+pub fn load_ogg_stream<P: AsRef<Path>>(path: P) -> Result<OggStreamReader<File>, VorbisError> {
+    let f = try!(File::open(path));
+    let packet_reader = ogg::PacketReader::new(f);
+	let srr = try!(OggStreamReader::new(packet_reader));
+    Ok(srr)
 }
 
 pub fn load_ogg<P: AsRef<Path>>(path: P) -> Result<Sound, VorbisError> {

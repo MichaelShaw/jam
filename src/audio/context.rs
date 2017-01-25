@@ -26,11 +26,12 @@ pub type DistanceModel = alto::DistanceModel;
 
 pub struct SoundContext<'a> {
     pub context: &'a Context<'a>,
-    pub path: PathBuf,
+    pub path: String,
     pub extension: String,
     pub sources: Vec<SoundSource<'a>>, 
     pub streaming_sources: Vec<StreamingSoundSource<'a>>,
     pub buffers: HashMap<SoundName, SoundBuffer<'a>>,
+    pub stream_above_file_size: u64,
     pub next_event : SoundEventId,
     pub master_gain : Gain,
     pub distance_model : DistanceModel,
@@ -71,7 +72,7 @@ pub struct StreamingSoundBinding {
     pub event_id: SoundEventId,
     pub sound_event: SoundEvent,
     pub stream_reader : OggStreamReader<File>,
-    // details about how streaming is going
+    // details about how streaming is going?
 }
 
 #[derive(Clone, Debug)]
@@ -83,7 +84,6 @@ pub struct SoundEvent {
     pub attenuation: f32,
     pub loop_sound: bool,
 }
-
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Listener {
@@ -104,15 +104,16 @@ impl Listener {
     }
 }
 
-pub fn create_sound_context<'a>(context: &'a Context<'a>, path:&str, extension: &str) -> SoundContext<'a> {
+pub fn create_sound_context<'a>(context: &'a Context<'a>, path:&str, extension: &str, stream_above_file_size: u64) -> SoundContext<'a> {
     // we should probably create our sources here
     SoundContext {
         context: context,
-        path: PathBuf::from(path),
+        path: String::from(path),
         extension: String::from(extension),
         sources: Vec::new(),
         streaming_sources: Vec::new(),
         buffers: HashMap::default(),
+        stream_above_file_size: stream_above_file_size,
         next_event: 0,
         master_gain: 1.0,
         distance_model: alto::DistanceModel::None,
@@ -162,11 +163,12 @@ impl<'a> SoundContext<'a> {
         Ok(())
     }
 
-    pub fn load_sound(&mut self, name: &str, gain: f32) -> JamResult<()> {
-        let mut full_path = self.path.clone();
-        full_path.push(name);
-        full_path.set_extension(&self.extension);
+    pub fn full_path(&self, name: &str) -> PathBuf {
+        PathBuf::from(format!("{}/{}.{}", &self.path, name, &self.extension))
+    }
 
+    pub fn load_sound(&mut self, name: &str, gain: f32) -> JamResult<()> {
+        let full_path = self.full_path(name);
         if full_path.exists() {
             let sound = try!(load_ogg(&full_path).map_err(JamError::Vorbis));
             let mut buffer = try!(self.context.new_buffer().map_err(JamError::Alto));
@@ -222,16 +224,11 @@ impl<'a> SoundContext<'a> {
         Ok(())
     }
 
-    pub fn play_event(&mut self, sound_event: SoundEvent) -> JamResult<SoundSourceLoan> {
+    pub fn play_event(&mut self, sound_event: SoundEvent, loan: Option<SoundSourceLoan>) -> JamResult<SoundSourceLoan> {
         if !self.buffers.contains_key(&sound_event.name) {
-            println!("sound is missing, attemping to load -> {:?}", &sound_event.name);
-            try!(self.load_sound(&sound_event.name, 1.0));
+            try!(self.load_sound(&sound_event.name, sound_event.gain));
         }
-
-        println!("playing -> {:?}", sound_event);
-
         let event_id = self.next_event_id();
-
         if let Some(buffer) = self.buffers.get(&sound_event.name) {
             if let Some(source) = self.sources.iter_mut().filter(|src| src.current_binding.is_none()).next() {
                 // fn set_buffer(&mut self, buf: Arc<Buffer<'d, 'c>
@@ -254,7 +251,7 @@ impl<'a> SoundContext<'a> {
                 Err(JamError::NoFreeSource)
             }
         } else {
-            Err(JamError::NoSound(sound_event.name.into()))
+            Err(JamError::NoSound(sound_event.name))
         }
     }
 }

@@ -56,7 +56,7 @@ pub enum JamError {
     NoFreeSource,
 }
 
-
+#[macro_export]
 macro_rules! hashset {
     ($($val: expr ),*) => {{
          let mut set = HashSet::default();
@@ -65,7 +65,7 @@ macro_rules! hashset {
     }}
 }
 
-
+#[macro_export]
 macro_rules! hashmap {
     ($( $key: expr => $val: expr ),*) => {{
          let mut map = HashMap::default();
