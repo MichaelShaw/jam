@@ -8,6 +8,8 @@ use std::io;
 
 use ogg;
 
+use JamError;
+
 #[derive(Clone, Debug)]
 pub struct Sound {
     pub data : Vec<i16>,
@@ -26,6 +28,22 @@ impl Sound {
 pub fn file_size<P: AsRef<Path>>(path: P) -> io::Result<u64> {
     let meta_data = try!(fs::metadata(path));
     Ok(meta_data.len())
+}
+
+pub enum LoadedSound {
+    Data(Sound),
+    Stream(OggStreamReader<File>),
+}
+
+pub fn load<P: AsRef<Path>>(path: P, streaming_size: u64) -> Result <LoadedSound, JamError> {
+    let size = try!(file_size(&path));
+    if size > streaming_size {
+        let stream = try!(load_ogg_stream(path));
+        Ok(LoadedSound::Stream(stream))
+    } else {
+        let sound = try!(load_ogg(path));
+        Ok(LoadedSound::Data(sound))
+    }
 }
 
 pub fn load_ogg_stream<P: AsRef<Path>>(path: P) -> Result<OggStreamReader<File>, VorbisError> {

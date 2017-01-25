@@ -46,24 +46,30 @@ fn main() {
         loop_sound: false,
     };
 
-    let persistent_sound = SoundEvent {
-        name: "come.and.find.me".into(),
-        position: Vec3f::zero(),
-        gain: 1.0,
-        pitch: 1.0,
-        attenuation:1.0,
-        loop_sound: false,
-    };
-
     let mut engine = SoundEngine::new();
 
     engine.process(&mut cb, Preload(vec![("teleport".into(), 1.0), ("water".into(), 1.0)])).unwrap();
 
-    engine.process(&mut cb, Render { master_gain: 1.0, sounds:vec![sound_event, sound_event_b], persistent_sounds: hashmap!["music".into() => persistent_sound], listener: listener }).unwrap();
+    engine.process(&mut cb, Render { master_gain: 1.0, sounds:vec![sound_event, sound_event_b], persistent_sounds: hashmap!["music".into() => find_me_sound(1.0)], listener: listener }).unwrap();
 
     std::thread::sleep(std::time::Duration::new(2, 0));
 
+    engine.process(&mut cb, Render { master_gain: 1.0, sounds:Vec::new(), persistent_sounds: hashmap!["music".into() => find_me_sound(0.5)], listener: listener }).unwrap();
+
+    std::thread::sleep(std::time::Duration::new(2, 0));
+    
     engine.process(&mut cb, Clear).unwrap();
 
     std::thread::sleep(std::time::Duration::new(1, 0));
+}
+
+fn find_me_sound(gain:f32) -> SoundEvent {
+    SoundEvent {
+        name: "come.and.find.me".into(),
+        position: Vec3f::zero(),
+        gain: gain,
+        pitch: 1.0,
+        attenuation:1.0,
+        loop_sound: false,
+    }
 }

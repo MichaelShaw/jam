@@ -56,6 +56,25 @@ pub enum JamError {
     NoFreeSource,
 }
 
+impl From<lewton::VorbisError> for JamError {
+    fn from(val: lewton::VorbisError) -> JamError {
+        JamError::Vorbis(val)
+    }
+}
+
+impl From<io::Error> for JamError {
+    fn from(val: io::Error) -> JamError {
+        JamError::IO(val)
+    }
+}
+
+impl From<alto::AltoError> for JamError {
+    fn from(val: alto::AltoError) -> JamError {
+        JamError::Alto(val)
+    }
+}
+
+
 #[macro_export]
 macro_rules! hashset {
     ($($val: expr ),*) => {{
