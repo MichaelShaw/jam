@@ -15,7 +15,7 @@ use cgmath::Zero;
 
 #[cfg(target_os = "windows")] 
 const OPENAL_PATH: &'static str = "./native/windows/OpenAL64.dll";
-#[cfg(target_os = "mac_os")]
+#[cfg(target_os = "macos")]
 const OPENAL_PATH: &'static str = "./native/mac/openal.dylib";
 
 fn main() {
