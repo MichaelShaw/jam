@@ -14,7 +14,7 @@ fnv = "*"
 notify = "*"
 time = "*"
 lewton = "*"
-alto = "*"
+alto = "0.3"
 ogg = "*"
 
 [[example]]

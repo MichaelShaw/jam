@@ -7,6 +7,9 @@ use std::path::{PathBuf};
 
 use super::load::load_ogg;
 
+use std::fs::File;
+use lewton::inside_ogg::OggStreamReader;
+
 use Vec3f;
 use HashMap;
 use JamResult;
@@ -40,26 +43,35 @@ pub struct SoundBuffer<'a> {
     pub duration: f32, // we could track last used .... could be interesting if nothing else
 }
 
-// an index to a source + binding
-#[derive(Debug, Clone, Copy)]
-pub struct SoundSourceLoan {
-    pub source_id : usize,
-    pub event_id : SoundEventId,
-}
-
 pub struct SoundSource<'a> {
     static_source: StaticSource<'a, 'a>,
     pub current_binding: Option<SoundBinding>,
-}
-
-pub struct StreamingSoundSource<'a> {
-    streaming_source: StreamingSource<'a, 'a>
 }
 
 #[derive(Debug)]
 pub struct SoundBinding {
     pub event_id: SoundEventId,
     pub sound_event: SoundEvent,
+}
+
+// an index to a source + binding
+#[derive(Debug, Clone, Copy)]
+pub struct SoundSourceLoan {
+    pub source_id: usize,
+    pub event_id: SoundEventId,
+    pub streaming: bool,
+}
+
+pub struct StreamingSoundSource<'a> {
+    streaming_source: StreamingSource<'a, 'a>,
+    pub current_binding: Option<StreamingSoundBinding>,
+}
+
+pub struct StreamingSoundBinding {
+    pub event_id: SoundEventId,
+    pub sound_event: SoundEvent,
+    pub stream_reader : OggStreamReader<File>,
+    // details about how streaming is going
 }
 
 #[derive(Clone, Debug)]
@@ -69,17 +81,9 @@ pub struct SoundEvent {
     pub gain: f32,
     pub pitch: f32,
     pub attenuation: f32,
+    pub loop_sound: bool,
 }
 
-#[derive(Clone, Debug)]
-pub struct PersistentSound {
-    pub name: String,
-    pub position: Vec3f,
-    pub gain: f32,
-    pub pitch: f32,
-    pub loop_sound: bool,
-    pub stream: bool,
-}
 
 #[derive(Copy, Clone, PartialEq, Debug)]
 pub struct Listener {
@@ -126,7 +130,7 @@ impl<'a> SoundContext<'a> {
     pub fn set_listener(&mut self, listener: Listener) -> JamResult<()> {
         try!(self.context.set_position(listener.position).map_err(JamError::Alto));
         try!(self.context.set_velocity(listener.velocity).map_err(JamError::Alto));
-        try!(self.context.set_orientation::<[f32; 3]>(listener.orientation_forward.into(), listener.orientation_up.into()).map_err(JamError::Alto));
+        try!(self.context.set_orientation::<[f32; 3]>((listener.orientation_forward.into(), listener.orientation_up.into())).map_err(JamError::Alto));
 
         self.listener = listener;
         
@@ -141,7 +145,7 @@ impl<'a> SoundContext<'a> {
 
         for _ in 0..streaming_sources {
             let source = try!(self.context.new_streaming_source().map_err(JamError::Alto));
-            self.streaming_sources.push(StreamingSoundSource { streaming_source: source });
+            self.streaming_sources.push(StreamingSoundSource { streaming_source: source, current_binding: None });
         }
 
         Ok(())
@@ -230,11 +234,13 @@ impl<'a> SoundContext<'a> {
 
         if let Some(buffer) = self.buffers.get(&sound_event.name) {
             if let Some(source) = self.sources.iter_mut().filter(|src| src.current_binding.is_none()).next() {
-                try!(source.static_source.set_buffer(Some(buffer.inner.clone())).map_err(JamError::Alto));
+                // fn set_buffer(&mut self, buf: Arc<Buffer<'d, 'c>
+                try!(source.static_source.set_buffer(buffer.inner.clone()).map_err(JamError::Alto));
                 try!(source.static_source.play().map_err(JamError::Alto));
+                // next 3 are all generic over trait
                 try!(source.static_source.set_pitch(sound_event.pitch).map_err(JamError::Alto));
-                // POSITION
-                // GAIN
+                try!(source.static_source.set_position(sound_event.position).map_err(JamError::Alto));
+                try!(source.static_source.set_gain(sound_event.gain).map_err(JamError::Alto));
                 source.current_binding = Some(SoundBinding {
                     event_id: event_id,
                     sound_event: sound_event,
@@ -242,6 +248,7 @@ impl<'a> SoundContext<'a> {
                 Ok(SoundSourceLoan {
                     source_id : 0,
                     event_id : event_id,
+                    streaming: false,
                 })
             } else {
                 Err(JamError::NoFreeSource)

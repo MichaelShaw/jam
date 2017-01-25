@@ -36,6 +36,7 @@ fn main() {
         gain: 1.0,
         pitch: 1.5,
         attenuation:1.0,
+        loop_sound: false,
     };
     let sound_event_b = SoundEvent {
         name: "water".into(),
@@ -43,6 +44,7 @@ fn main() {
         gain: 1.0,
         pitch: 1.0,
         attenuation:1.0,
+        loop_sound: false,
     };
 
     process(&mut cb, Render { master_gain: 1.0, sounds:vec![sound_event, sound_event_b], persistent_sounds:HashMap::default(), listener: listener }).unwrap();

@@ -1,17 +1,26 @@
 use {HashMap, JamResult};
 
-use super::context::{DistanceModel, SoundEvent, PersistentSound, Listener, SoundName, Gain, SoundContext};
+use time;
+
+use super::context::{DistanceModel, SoundEvent, SoundSourceLoan, Listener, SoundName, Gain, SoundContext};
 
 #[derive(Debug, Clone)]
 pub enum SoundEngineUpdate {
     Preload(Vec<(SoundName, Gain)>), // load buffers
     DistanceModel(DistanceModel),
-    Render { master_gain: f32, sounds:Vec<SoundEvent>, persistent_sounds:HashMap<String, PersistentSound>, listener: Listener },
+    Render { master_gain: f32, sounds:Vec<SoundEvent>, persistent_sounds:HashMap<String, SoundEvent>, listener: Listener },
     Clear, // unbind all sources, destroy all buffers
 }
 
 
 // we need our state of what's already persisted, loans etc.
+
+struct SoundEngine {
+    // some measure of time
+    // some notion of existing sounds
+    pub last_render_time: u64,
+    pub loans : HashMap<String, SoundSourceLoan>,
+}
 
 pub fn process(context: &mut SoundContext, update:SoundEngineUpdate) -> JamResult<()> {
     use self::SoundEngineUpdate::*;
