@@ -44,8 +44,13 @@ pub struct SoundBuffer<'a> {
     pub duration: f32, // we could track last used .... could be interesting if nothing else
 }
 
+pub enum CombinedSource<'a> {
+    Normal(&'a mut SoundSource<'a>),
+    Streaming(&'a mut StreamingSoundSource<'a>),
+}
+
 pub struct SoundSource<'a> {
-    static_source: StaticSource<'a, 'a>,
+    inner: StaticSource<'a, 'a>,
     pub current_binding: Option<SoundBinding>,
 }
 
@@ -55,10 +60,6 @@ pub struct SoundBinding {
     pub sound_event: SoundEvent,
 }
 
-pub enum CombinedSource<'a> {
-    Normal(&'a mut SoundSource<'a>),
-    Streaming(&'a mut StreamingSoundSource<'a>),
-}
 
 // an index to a source + binding
 #[derive(Debug, Clone, Copy)]
@@ -69,7 +70,7 @@ pub struct SoundSourceLoan {
 }
 
 pub struct StreamingSoundSource<'a> {
-    streaming_source: StreamingSource<'a, 'a>,
+    inner: StreamingSource<'a, 'a>,
     pub current_binding: Option<StreamingSoundBinding>,
 }
 
@@ -146,12 +147,12 @@ impl<'a> SoundContext<'a> {
     pub fn create_sources(&mut self, static_sources: usize, streaming_sources: usize) -> JamResult<()> {
         for _ in 0..static_sources {
             let source = try!(self.context.new_static_source());
-            self.sources.push(SoundSource { static_source: source, current_binding: None});
+            self.sources.push(SoundSource { inner: source, current_binding: None});
         }
 
         for _ in 0..streaming_sources {
             let source = try!(self.context.new_streaming_source());
-            self.streaming_sources.push(StreamingSoundSource { streaming_source: source, current_binding: None });
+            self.streaming_sources.push(StreamingSoundSource { inner: source, current_binding: None });
         }
 
         Ok(())
@@ -160,13 +161,13 @@ impl<'a> SoundContext<'a> {
     pub fn purge(&mut self) -> JamResult<()> {
         for source in self.sources.iter_mut() {
             if source.current_binding.is_some() {
-                try!(source.static_source.stop());
+                try!(source.inner.stop());
                 source.current_binding = None;
             }
         }
         for source in self.streaming_sources.iter_mut() {
             if source.current_binding.is_some() {
-                try!(source.streaming_source.stop());
+                try!(source.inner.stop());
                 source.current_binding = None;
             }
         }
@@ -216,7 +217,7 @@ impl<'a> SoundContext<'a> {
 
         for source in self.sources.iter_mut() {
             if source.current_binding.is_some() {
-                let state = try!(source.static_source.state());
+                let state = try!(source.inner.state());
                 match state {
                     Initial | Playing | Paused => (),
                     Stopped => {
@@ -230,7 +231,7 @@ impl<'a> SoundContext<'a> {
         }
         for streaming_source in self.streaming_sources.iter_mut() {
             if streaming_source.current_binding.is_some() {
-                let state = try!(streaming_source.streaming_source.state());
+                let state = try!(streaming_source.inner.state());
                 match state {
                     Initial | Playing | Paused => (),
                     Stopped => {
@@ -260,9 +261,9 @@ impl<'a> SoundContext<'a> {
         }
     }
 
-    pub fn loan_valid_ok(&'a mut self, loan:SoundSourceLoan) -> Option<CombinedSource<'a>> {
+    pub fn loan_valid_ok<'b: 'a>(&'b mut self, loan:SoundSourceLoan) -> Option<CombinedSource<'b>> {
         if loan.streaming {
-            let mut source : &mut StreamingSoundSource<'a> = &mut self.streaming_sources[loan.source_id];
+            let mut source : &mut StreamingSoundSource<'b> = &mut self.streaming_sources[loan.source_id];
             let valid = source.current_binding.iter().any(|ss| ss.event_id == loan.event_id );
             if valid {
                 Some(CombinedSource::Streaming(source))
@@ -274,15 +275,29 @@ impl<'a> SoundContext<'a> {
         }
     }
 
+    pub fn some_bullshit(&'a mut self, loan:SoundSourceLoan) -> bool {
+        match self.loan_valid_ok(loan) {
+            Some(CombinedSource::Normal(source)) => {
+                source.inner.play().unwrap();
+                true    
+            },
+            Some(CombinedSource::Streaming(streaming)) => {
+                streaming.inner.play().unwrap();
+                true   
+            },
+            None => false,
+        }
+    }
+
     pub fn stop_loan(&mut self, loan:SoundSourceLoan) -> JamResult<()> {
         if self.loan_valid(loan) {
             if loan.streaming {
                 let source = &mut self.streaming_sources[loan.source_id];
-                try!(source.streaming_source.stop());
+                try!(source.inner.stop());
             } else {
                 let source = &mut self.sources[loan.source_id];
-                try!(source.static_source.stop());
-                try!(source.static_source.clear_buffer());
+                try!(source.inner.stop());
+                try!(source.inner.clear_buffer());
             }
         } 
         Ok(())
@@ -294,16 +309,14 @@ impl<'a> SoundContext<'a> {
             if self.loan_valid(l) {
                 if l.streaming {
                     let source = &mut self.streaming_sources[l.source_id];
-                    try!(assign_event(&mut source.streaming_source, &sound_event));
+                    try!(assign_event(&mut source.inner, &sound_event));
                 } else {
                     let source = &mut self.sources[l.source_id];
-                    try!(assign_event(&mut source.static_source, &sound_event));
+                    try!(assign_event(&mut source.inner, &sound_event));
                 }
                 return Ok(l)
             }
         }
-
-
 
         if !self.buffers.contains_key(&sound_event.name) {
             try!(self.load_sound(&sound_event.name, sound_event.gain));
@@ -312,11 +325,11 @@ impl<'a> SoundContext<'a> {
         if let Some(buffer) = self.buffers.get(&sound_event.name) {
             if let Some(source) = self.sources.iter_mut().filter(|src| src.current_binding.is_none()).next() {
                 // fn set_buffer(&mut self, buf: Arc<Buffer<'d, 'c>
-                try!(source.static_source.set_buffer(buffer.inner.clone()));
-                try!(source.static_source.play());
+                try!(source.inner.set_buffer(buffer.inner.clone()));
+                try!(source.inner.play());
                 
                 // try!(source.static_source.set_looping(sound_event.loop_sound));
-                try!(assign_event(&mut source.static_source, &sound_event));
+                try!(assign_event(&mut source.inner, &sound_event));
                 source.current_binding = Some(SoundBinding {
                     event_id: event_id,
                     sound_event: sound_event,
