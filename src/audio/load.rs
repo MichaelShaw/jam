@@ -1,4 +1,3 @@
-use lewton::VorbisError;
 use lewton::inside_ogg::OggStreamReader;
 
 use std::fs;
@@ -8,7 +7,7 @@ use std::io;
 
 use ogg;
 
-use JamError;
+use {JamResult};
 
 #[derive(Clone, Debug)]
 pub struct Sound {
@@ -31,29 +30,29 @@ pub fn file_size<P: AsRef<Path>>(path: P) -> io::Result<u64> {
 }
 
 pub enum LoadedSound {
-    Data(Sound),
-    Stream(OggStreamReader<File>),
+    Static(Sound),
+    Streaming(OggStreamReader<File>),
 }
 
-pub fn load<P: AsRef<Path>>(path: P, streaming_size: u64) -> Result <LoadedSound, JamError> {
+pub fn load<P: AsRef<Path>>(path: P, streaming_size: u64) -> JamResult<LoadedSound> {
     let size = try!(file_size(&path));
     if size > streaming_size {
         let stream = try!(load_ogg_stream(path));
-        Ok(LoadedSound::Stream(stream))
+        Ok(LoadedSound::Streaming(stream))
     } else {
         let sound = try!(load_ogg(path));
-        Ok(LoadedSound::Data(sound))
+        Ok(LoadedSound::Static(sound))
     }
 }
 
-pub fn load_ogg_stream<P: AsRef<Path>>(path: P) -> Result<OggStreamReader<File>, VorbisError> {
+pub fn load_ogg_stream<P: AsRef<Path>>(path: P) -> JamResult<OggStreamReader<File>> {
     let f = try!(File::open(path));
     let packet_reader = ogg::PacketReader::new(f);
 	let srr = try!(OggStreamReader::new(packet_reader));
     Ok(srr)
 }
 
-pub fn load_ogg<P: AsRef<Path>>(path: P) -> Result<Sound, VorbisError> {
+pub fn load_ogg<P: AsRef<Path>>(path: P) -> JamResult<Sound> {
     let f = try!(File::open(path));
 
 	// Prepare the reading

@@ -32,45 +32,43 @@ impl SoundEngine {
 
     pub fn process(&mut self, context: &mut SoundContext, update:SoundEngineUpdate) -> JamResult<()> {
         use self::SoundEngineUpdate::*;
-        match update {
-            Preload(sounds) => {
-                for &(ref sound_name, gain) in &sounds {
-                    println!("preload {:?} gain {:?}", sound_name, gain);
-                    try!(context.load_sound(sound_name, gain));
-                }
-            },
-            DistanceModel(model) => {
-                try!(context.set_distace_model(model))
-            },
-            Render { master_gain, sounds, persistent_sounds, listener } => {
-                if context.master_gain != master_gain {
-                    println!("updating master gain to {:?}", master_gain);
-                    try!(context.set_gain(master_gain));
-                }
-                if context.listener != listener {
-                    println!("updating listener!");
-                    try!(context.set_listener(listener));
-                }
-                if !sounds.is_empty() {
-                    try!(context.clean_sources()); // a bit eager, but what the hell
-                }
-                for sound_event in sounds {
-                    try!(context.play_event(sound_event, None));
-                }
+        // match update {
+        //     Preload(sounds) => {
+        //         for &(ref sound_name, gain) in &sounds {
+        //             println!("preload {:?} gain {:?}", sound_name, gain);
+        //             try!(context.load_sound(sound_name, gain));
+        //         }
+        //     },
+        //     DistanceModel(model) => {
+        //         try!(context.set_distace_model(model))
+        //     },
+        //     Render { master_gain, sounds, persistent_sounds, listener } => {
+        //         try!(context.clean_sources());
+        //         if context.master_gain != master_gain {
+        //             println!("updating master gain to {:?}", master_gain);
+        //             try!(context.set_gain(master_gain));
+        //         }
+        //         if context.listener != listener {
+        //             println!("updating listener!");
+        //             try!(context.set_listener(listener));
+        //         }
+        //         for sound_event in sounds {
+        //             try!(context.play_event(sound_event, None));
+        //         }
                 
-                for (name, sound_event) in persistent_sounds {
-                    let old_loan = self.loans.remove(&name);
-                    let new_loan = try!(context.play_event(sound_event, old_loan));
-                    self.loans.insert(name, new_loan);
-                }
+        //         for (name, sound_event) in persistent_sounds {
+        //             let old_loan = self.loans.remove(&name);
+        //             let new_loan = try!(context.play_event(sound_event, old_loan));
+        //             self.loans.insert(name, new_loan);
+        //         }
 
-                ()   
-            },
-            Clear => {
-                try!(context.purge());
-                ()
-            },
-        };
+        //         ()   
+        //     },
+        //     Clear => {
+        //         try!(context.purge());
+        //         ()
+        //     },
+        // };
         Ok(())
     }
 }
