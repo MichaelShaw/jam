@@ -28,11 +28,9 @@ pub struct SoundContext<'d> {
     pub context: &'d Context<'d>,
     pub path: String,
     pub extension: String,
-    pub sources: Vec<SoundSource<'d>>, 
-    pub streaming_sources: Vec<StreamingSoundSource<'d>>,
+    pub sources: Sources<'d>,
     pub buffers: HashMap<SoundName, SoundBuffer<'d>>,
     pub stream_above_file_size: u64,
-    pub next_event : SoundEventId,
     pub master_gain : Gain,
     pub distance_model : DistanceModel,
     pub listener : Listener,
@@ -104,11 +102,13 @@ pub fn create_sound_context<'d>(context: &'d Context<'d>, path:&str, extension: 
         context: context,
         path: String::from(path),
         extension: String::from(extension),
-        sources: Vec::new(),
-        streaming_sources: Vec::new(),
+        sources: Sources {
+            next_event: 0,
+            sources: Vec::new(),
+            streaming: Vec::new(),
+        },
         buffers: HashMap::default(),
         stream_above_file_size: stream_above_file_size,
-        next_event: 0,
         master_gain: 1.0,
         distance_model: alto::DistanceModel::None,
         listener: Listener::default() ,
@@ -116,9 +116,21 @@ pub fn create_sound_context<'d>(context: &'d Context<'d>, path:&str, extension: 
 }
 
 impl<'d> SoundContext<'d> {
-      pub fn set_gain(&mut self, gain: Gain) -> JamResult<()> {
+    pub fn set_gain(&mut self, gain: Gain) -> JamResult<()> {
         try!(self.context.set_gain(gain));
         self.master_gain = gain;
+        Ok(())
+    }
+
+    pub fn create(&mut self, static_count: usize, streaming_count: usize) -> JamResult<()> {
+        for _ in 0..static_count {
+            let source = try!(self.context.new_static_source());
+            self.sources.sources.push(SoundSource { inner: source, current_binding: None});
+        }
+        for _ in 0..streaming_count {
+            let source = try!(self.context.new_streaming_source());
+            self.sources.streaming.push(StreamingSoundSource { inner: source, stream_reader: None, current_binding: None });
+        }
         Ok(())
     }
 
@@ -132,31 +144,8 @@ impl<'d> SoundContext<'d> {
         Ok(())
     }
 
-    pub fn create_sources(&mut self, static_sources: usize, streaming_sources: usize) -> JamResult<()> {
-        for _ in 0..static_sources {
-            let source = try!(self.context.new_static_source());
-            self.sources.push(SoundSource { inner: source, current_binding: None});
-        }
-        for _ in 0..streaming_sources {
-            let source = try!(self.context.new_streaming_source());
-            self.streaming_sources.push(StreamingSoundSource { inner: source, stream_reader: None, current_binding: None });
-        }
-        Ok(())
-    }
-
      pub fn purge(&mut self) -> JamResult<()> {
-        for source in self.sources.iter_mut() {
-            if source.current_binding.is_some() {
-                try!(source.inner.stop());
-                source.current_binding = None;
-            }
-        }
-        for source in self.streaming_sources.iter_mut() {
-            if source.current_binding.is_some() {
-                try!(source.inner.stop());
-                source.current_binding = None;
-            }
-        }
+        try!(self.sources.purge());
         self.buffers.clear();
         Ok(())
     }
@@ -165,12 +154,142 @@ impl<'d> SoundContext<'d> {
         PathBuf::from(format!("{}/{}.{}", &self.path, name, &self.extension))
     }
 
+
+    pub fn set_distace_model(&mut self, distance_model: DistanceModel) -> JamResult<()> {
+        try!(self.context.set_distance_model(distance_model));
+        self.distance_model = distance_model;
+        Ok(())
+    }
+
+    // just convenience
+    pub fn stop(&mut self, loan:SoundSourceLoan) -> JamResult<()> {
+        if let Some(ref mut source) = self.sources.for_loan(loan) {
+            try!(source.stop());
+        }
+        Ok(())
+    }
+
+    pub fn play_event(&mut self, sound_event: SoundEvent, loan: Option<SoundSourceLoan>) -> JamResult<SoundSourceLoan> {
+        if let Some(l) = loan {
+            if let Some(mut s) = self.sources.for_loan(l) {
+                try!(s.assign_event(&sound_event));
+                return Ok(l)
+            }
+        } 
+        
+        if let Some(buffer) = self.buffers.get(&sound_event.name) {
+            // sound is loaded
+            if let Some((source, loan)) = self.sources.loan_next_free_static() {
+                // and there's a free source
+                try!(source.inner.set_buffer(buffer.inner.clone()));
+                try!(assign_event(&mut source.inner, &sound_event));
+                try!(source.inner.play());
+
+                Ok(loan)
+            } else {
+                Err(JamError::NoFreeSource)
+            }
+        } else {
+            Ok(loan.unwrap())
+        }
+    }
+}
+
+pub struct Sources<'d> {
+    pub next_event: SoundEventId,
+    pub sources: Vec<SoundSource<'d>>, 
+    pub streaming: Vec<StreamingSoundSource<'d>>,
+}
+
+impl <'d> Sources<'d> {
     pub fn next_event_id(&mut self) -> SoundEventId {
         self.next_event += 1;
         self.next_event
     }
 
-    pub fn clean_sources(&mut self) -> JamResult<(u32, u32)> {
+    pub fn next_free_static_idx(&self) -> Option<usize> {
+        let len = self.sources.len();
+        for i in 0..len {
+            let source = &self.sources[i];
+            if source.current_binding.is_none() {
+                return Some(i);
+            }
+        }
+        None
+    }
+
+    pub fn loan_next_free_static<'a>(&'a mut self) -> Option<(&'a mut SoundSource<'d>, SoundSourceLoan)> {
+        let event_id = self.next_event_id();
+        let len = self.sources.len();
+        for i in 0..len {
+            let source = &mut self.sources[i];
+            let loan = SoundSourceLoan {
+                source_id: i,
+                event_id: event_id,
+                streaming: false,
+            };
+            return Some((source, loan));
+        }
+
+        None
+    }
+
+    pub fn loan_next_free_streaming<'a>(&'a mut self) -> Option<(&'a mut StreamingSoundSource<'d>, SoundSourceLoan)> {
+        let event_id = self.next_event_id();
+        let len = self.streaming.len();
+        for i in 0..len {
+            let source = &mut self.streaming[i];
+            let loan = SoundSourceLoan {
+                source_id: i,
+                event_id: event_id,
+                streaming: true,
+            };
+            return Some((source, loan));
+        }
+
+        None
+    }
+
+    // I don't really understand this 'a on the mut self :-(
+    pub fn for_loan<'a>(&'a mut self, loan:SoundSourceLoan) -> Option<CombinedSource<'d, 'a>> {
+        use self::CombinedSource::*;
+        if loan.streaming {
+            let mut source : &'a mut StreamingSoundSource<'d> = &mut self.streaming[loan.source_id];
+            let valid = source.current_binding.iter().any(|ss| ss.event_id == loan.event_id );
+            if valid {
+                Some(Streaming(source))
+            } else {
+                None
+            }
+        } else {
+            let mut source : &'a mut SoundSource<'d> = &mut self.sources[loan.source_id];
+            let valid = source.current_binding.iter().any(|ss| ss.event_id == loan.event_id );
+            if valid {
+                Some(Static(source))
+            } else {
+                None
+            }
+        }
+    }
+
+    pub fn purge(&mut self) -> JamResult<()> {
+        for source in self.sources.iter_mut() {
+            if source.current_binding.is_some() {
+                try!(source.inner.stop());
+                source.current_binding = None;
+            }
+        }
+        for source in self.streaming.iter_mut() {
+            if source.current_binding.is_some() {
+                try!(source.inner.stop());
+                source.current_binding = None;
+            }
+        }
+        Ok(())
+    }
+    
+    // just updates book keeping of sources that have stopped since we checked (so we can throw away the binding)
+    pub fn clean(&mut self) -> JamResult<(u32, u32)> {
         use alto::SourceState::*;
 
         let mut available_sources = 0;
@@ -190,13 +309,13 @@ impl<'d> SoundContext<'d> {
                 available_sources += 1;
             }
         }
-        for streaming_source in self.streaming_sources.iter_mut() {
-            if streaming_source.current_binding.is_some() {
-                let state = try!(streaming_source.inner.state());
+        for source in self.streaming.iter_mut() {
+            if source.current_binding.is_some() {
+                let state = try!(source.inner.state());
                 match state {
                     Initial | Playing | Paused => (),
                     Stopped => {
-                        streaming_source.current_binding = None;
+                        source.current_binding = None;
                         available_streaming_sources += 1;   
                     },
                 };
@@ -206,41 +325,6 @@ impl<'d> SoundContext<'d> {
         }
 
         Ok((available_sources, available_streaming_sources))
-    }
-
-    pub fn set_distace_model(&mut self, distance_model: DistanceModel) -> JamResult<()> {
-        try!(self.context.set_distance_model(distance_model));
-        self.distance_model = distance_model;
-        Ok(())
-    }
-
-    // I don't really understand this 'a on the mut self :-(
-    pub fn source_for_loan<'a>(&'a mut self, loan:SoundSourceLoan) -> Option<CombinedSource<'d, 'a>> {
-        if loan.streaming {
-            let mut source : &'a mut StreamingSoundSource<'d> = &mut self.streaming_sources[loan.source_id];
-            let valid = source.current_binding.iter().any(|ss| ss.event_id == loan.event_id );
-            if valid {
-                Some(CombinedSource::Streaming(source))
-            } else {
-                None
-            }
-        } else {
-            let mut source : &'a mut SoundSource<'d> = &mut self.sources[loan.source_id];
-            let valid = source.current_binding.iter().any(|ss| ss.event_id == loan.event_id );
-            if valid {
-                Some(CombinedSource::Static(source))
-            } else {
-                None
-            }
-        }
-    }
-
-    // just convenience
-    pub fn stop(&mut self, loan:SoundSourceLoan) -> JamResult<()> {
-        if let Some(ref mut source) = self.source_for_loan(loan) {
-            try!(source.stop());
-        }
-        Ok(())
     }
 }
 
