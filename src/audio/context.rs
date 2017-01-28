@@ -1,16 +1,13 @@
 use alto;
-use alto::{Context, StaticSource, StreamingSource, Buffer, SourceTrait};
+use alto::{Context, Buffer, SourceTrait};
 use alto::{Mono, Stereo};
 
 use std::sync::Arc;
 use std::path::{PathBuf};
 
 use super::{Gain, SoundEvent, SoundName, DistanceModel};
-use super::load::{load_combined, LoadedSound};
-use super::source::{Sources, SoundSource, StreamingSoundSource, SoundSourceLoan, assign_event_static};
-
-use std::fs::File;
-use lewton::inside_ogg::OggStreamReader;
+use super::load::{load_combined, LoadedSound, load_ogg};
+use super::source::{Sources, SoundSource, StreamingSoundSource, SoundSourceLoan};
 
 use Vec3f;
 use HashMap;
@@ -80,6 +77,7 @@ impl<'d> SoundContext<'d> {
     pub fn set_gain(&mut self, gain: Gain) -> JamResult<()> {
         try!(self.context.set_gain(gain));
         self.master_gain = gain;
+
         Ok(())
     }
 
@@ -130,9 +128,30 @@ impl<'d> SoundContext<'d> {
         Ok(())
     }
 
+    pub fn load_sound(&mut self, sound_name: &str, gain: Gain) -> JamResult<()> {
+        let path = self.full_path(sound_name);
+        let sound = try!(load_ogg(path));
+        let mut buffer = try!(self.context.new_buffer());
+        let duration = sound.duration();
+        if sound.channels == 1 {
+            try!(buffer.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32));
+        } else if sound.channels == 2 {
+            try!(buffer.set_data::<Stereo<i16>, _>(sound.data, sound.sample_rate as i32));
+        } else {
+            return Err(JamError::TooManyChannels);
+        }
+
+        let arc_buffer = Arc::new(buffer);
+        self.buffers.insert(sound_name.into(), SoundBuffer{ inner: arc_buffer, gain: gain, duration: duration });
+
+        Ok(())
+    }
+
     pub fn play_event(&mut self, sound_event: SoundEvent, loan: Option<SoundSourceLoan>) -> JamResult<SoundSourceLoan> {
         if let Some(l) = loan {
             if let Some(mut s) = self.sources.for_loan(l) {
+                // we have a loan, just apply the event
+                println!("we have loadn for {:?}", sound_event);
                 try!(s.assign_event(sound_event, l.event_id));
                 return Ok(l)
             }
@@ -140,34 +159,76 @@ impl<'d> SoundContext<'d> {
         
         if let Some(buffer) = self.buffers.get(&sound_event.name) {
             // sound is loaded
-            if let Some((ref mut source, loan)) = self.sources.loan_next_free_static() {
+            return if let Some((ref mut source, loan)) = self.sources.loan_next_free_static() {
+                // println!("we have a sound event {:?} and now a loan {:?}", sound_event, loan);
                 // and there's a free source
                 try!(source.inner.set_buffer(buffer.inner.clone()));
-                try!(assign_event_static(source, sound_event, loan.event_id));
+                try!(source.assign_event(sound_event, loan.event_id));
                 try!(source.inner.play());
      
                 Ok(loan)
             } else {
                 Err(JamError::NoFreeSource(false))
             }
-        } else {
-            // ok we need to load/stream it
-            let combined_load = try!(load_combined(self.full_path(&sound_event.name), self.stream_above_file_size));
+        }
 
-            // we need to call out here ...
-            match combined_load {
-                LoadedSound::Static(sound) => {
-                    
-                     Err(JamError::NoFreeSource(true))    
-                },
-                LoadedSound::Streaming(ogg_stream_reader) => {
-                    return if let Some((source, loan)) = self.sources.loan_next_free_streaming() {
-                        Err(JamError::NoFreeSource(true))
-                    } else {
-                        Err(JamError::NoFreeSource(true))
-                    };
-                },
+        // ok we need to load/stream it
+        let combined_load = try!(load_combined(self.full_path(&sound_event.name), self.stream_above_file_size));
+
+        // we need to call out here ...
+        match combined_load {
+            LoadedSound::Static(sound) => {
+                let mut buffer = try!(self.context.new_buffer());
+                let duration = sound.duration();
+                if sound.channels == 1 {
+                    try!(buffer.set_data::<Mono<i16>, _>(sound.data, sound.sample_rate as i32));
+                } else if sound.channels == 2 {
+                    try!(buffer.set_data::<Stereo<i16>, _>(sound.data, sound.sample_rate as i32));
+                } else {
+                    return Err(JamError::TooManyChannels);
+                }
+
+                let arc_buffer = Arc::new(buffer);
+        
+                let sound_name = sound_event.name.clone();
+                
+                let result = if let Some((source, loan)) = self.sources.loan_next_free_static() {
+                    try!(source.inner.set_buffer(arc_buffer.clone()));
+                    try!(source.assign_event(sound_event, loan.event_id));
+                    try!(source.inner.play());
+                    Ok(loan)
+                } else {
+                    Err(JamError::NoFreeSource(false))
+                };
+                self.buffers.insert(sound_name, SoundBuffer{ inner: arc_buffer, gain: 1.0, duration: duration });
+                result
+            },
+            LoadedSound::Streaming(ogg_stream_reader) => {
+                return if let Some((source, loan)) = self.sources.loan_next_free_streaming() {
+                    source.stream_reader = Some(ogg_stream_reader);
+
+                    try!(source.ensure_buffers_current(self.context));
+                    try!(source.assign_event(sound_event, loan.event_id));
+                    try!(source.inner.play());
+
+                    println!("ok new streaming binding -> {:?}", source.current_binding);
+
+                    Ok(loan)
+                } else {
+                    Err(JamError::NoFreeSource(true))
+                };
+            },
+        }
+    }
+
+    pub fn ensure_buffers_current(&mut self) -> JamResult<()> {
+        for source in self.sources.streaming.iter_mut() {
+            println!("ok checking a streaming source");
+            if source.current_binding.is_some() {
+                println!("source has a current binding");
+                try!(source.ensure_buffers_current(self.context));
             }
         }
+        Ok(())
     }
 }

@@ -25,7 +25,7 @@ fn main() {
     let dev = alto.open(None).unwrap();
     let ctx = dev.new_context(None).unwrap();
     let mut cb = jam::audio::context::create_sound_context(&ctx, "resources/sound", "ogg", 1_000_000);
-    cb.create_sources(32, 4).unwrap();
+    cb.create(32, 4).unwrap();
 
     let listener = Listener::default();
 
@@ -52,11 +52,11 @@ fn main() {
 
     engine.process(&mut cb, Render { master_gain: 1.0, sounds:vec![sound_event, sound_event_b], persistent_sounds: hashmap!["music".into() => find_me_sound(1.0)], listener: listener }).unwrap();
 
-    std::thread::sleep(std::time::Duration::new(2, 0));
+    std::thread::sleep(std::time::Duration::new(5, 0));
 
-    engine.process(&mut cb, Render { master_gain: 1.0, sounds:Vec::new(), persistent_sounds: hashmap!["music".into() => find_me_sound(0.5)], listener: listener }).unwrap();
+    engine.process(&mut cb, Render { master_gain: 1.0, sounds:Vec::new(), persistent_sounds: hashmap!["music".into() => find_me_sound(0.3)], listener: listener }).unwrap();
 
-    std::thread::sleep(std::time::Duration::new(2, 0));
+    std::thread::sleep(std::time::Duration::new(5, 0));
     
     engine.process(&mut cb, Clear).unwrap();
 
