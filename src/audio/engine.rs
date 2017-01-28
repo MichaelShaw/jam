@@ -2,7 +2,9 @@ use {HashMap, JamResult};
 
 use time;
 
-use super::context::{DistanceModel, SoundEvent, SoundSourceLoan, Listener, SoundName, Gain, SoundContext};
+use super::{DistanceModel, SoundEvent, Gain, SoundName};
+use super::context::{Listener, SoundContext};
+use super::source::SoundSourceLoan;
 
 #[derive(Debug, Clone)]
 pub enum SoundEngineUpdate {

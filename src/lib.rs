@@ -53,7 +53,7 @@ pub enum JamError {
     FileDoesntExist(PathBuf),
     TooManyChannels,
     NoSound(String),
-    NoFreeSource,
+    NoFreeSource(bool), // bool is for streaming
 }
 
 impl From<lewton::VorbisError> for JamError {

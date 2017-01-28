@@ -34,7 +34,7 @@ pub enum LoadedSound {
     Streaming(OggStreamReader<File>),
 }
 
-pub fn load<P: AsRef<Path>>(path: P, streaming_size: u64) -> JamResult<LoadedSound> {
+pub fn load_combined<P: AsRef<Path>>(path: P, streaming_size: u64) -> JamResult<LoadedSound> {
     let size = try!(file_size(&path));
     if size > streaming_size {
         let stream = try!(load_ogg_stream(path));
