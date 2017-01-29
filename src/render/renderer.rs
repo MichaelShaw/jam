@@ -13,7 +13,6 @@ use glutin::Api;
 
 use time;
 
-
 use gfx::traits::FactoryExt;
 use gfx::Device;
 use gfx::texture;
@@ -122,7 +121,7 @@ impl fmt::Debug for Command {
 
 
 use render::shader::ShaderPair;
-use render::texture::texture_array::TextureDirectory;
+use render::texture_array::TextureDirectory;
 
 extern crate gfx_device_gl;
 

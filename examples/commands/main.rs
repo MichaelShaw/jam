@@ -3,19 +3,22 @@
 extern crate jam;
 extern crate cgmath;
 
-use jam::render::shader::ShaderPair;
-use jam::render::texture::texture_array::TextureDirectory;
+use jam::render::ShaderPair;
+use jam::render::TextureDirectory;
 use jam::input::InputState;
-use jam::render::shader::fatter;
-use jam::render::shader::fatter::Command::*;
-use jam::render::shader::fatter::{Seconds, Dimensions, Application, Command, Uniforms};
 use jam::camera::Camera;
 use jam::color;
 use jam::color::Color;
-use jam::render::quads::GeometryTesselator;
-use jam::render::texture::TextureRegion;
+
+use jam::render::GeometryTesselator;
+use jam::render::TextureRegion;
 use jam::Vec3;
 use std::f64::consts::PI;
+
+use jam::render::renderer;
+use jam::render::renderer::Command::*;
+use jam::render::renderer::{Seconds, Dimensions, Application, Command, Uniforms};
+
 
 use cgmath::Rad;
 
@@ -38,7 +41,7 @@ fn main() {
     
     let texture_dir = TextureDirectory::for_path("resources/textures");
 
-    fatter::fat_example(app, shader_pair, texture_dir, (600, 600));
+    renderer::fat_example(app, shader_pair, texture_dir, (600, 600));
 }
 
 struct App {
@@ -91,7 +94,7 @@ impl Application for App {
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
         
-        let mut commands : Vec<fatter::Command> = Vec::new();
+        let mut commands : Vec<renderer::Command> = Vec::new();
         
         let an = self.n / 60;
 
@@ -120,7 +123,7 @@ impl Application for App {
                     key: Some(name), 
                     vertices: t.tesselator.vertices, 
                     uniforms: Uniforms {
-                        transform : fatter::down_size_m4(self.camera.view_projection().into()),
+                        transform : renderer::down_size_m4(self.camera.view_projection().into()),
                         color: render_color,
                     }
                 }); 
@@ -134,7 +137,7 @@ impl Application for App {
                 commands.push(Draw {
                     key: name,
                      uniforms: Uniforms {
-                        transform : fatter::down_size_m4(self.camera.view_projection().into()),
+                        transform: renderer::down_size_m4(self.camera.view_projection().into()),
                         color: render_color,
                     }
                 });

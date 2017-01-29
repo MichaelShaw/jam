@@ -14,11 +14,7 @@ extern crate fnv;
 
 extern crate notify;
 
-pub mod render {
-    pub mod quads;
-    pub mod shader;
-    pub mod texture;
-}
+pub mod render ;
 pub mod camera;
 pub mod input;
 pub mod geometry;

@@ -1,5 +1,3 @@
-pub mod fatter;
-
 use std::io;
 use std::path::{PathBuf, Path};
 use std::fs::File;
