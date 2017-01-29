@@ -23,12 +23,11 @@ use gfx_window_glutin;
 use cgmath::SquareMatrix;
 
 pub use {DepthFormat, ColorFormat};
-use {Mat4, Vec3};
+use {Mat4};
 use JamError;
 use input;
 use input::InputState;
 use color::Color;
-use render::texture::texture_region::TextureRegion;
 
 gfx_defines!{
     vertex Vertex {
@@ -180,24 +179,9 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     let default_transform : [[f64; 4]; 4] = Mat4::identity().into();
 
-    use render::quads::GeometryTesselator;
-
-    let base_pixels_per_unit = 16.0_f64;
-    let units_per_pixel = 1.0 / base_pixels_per_unit;
-    let tesselator_scale = Vec3::new(units_per_pixel, units_per_pixel, units_per_pixel);
-    let mut tesselator = GeometryTesselator::new(tesselator_scale);
-    let texture_region = TextureRegion {
-        u_min: 0,
-        u_max: 128,
-        v_min: 0,
-        v_max: 128,
-        texture_size: 128,
-    };
-    tesselator.draw_floor_tile(&texture_region, 0, 0.0, 0.0, 0.0, 0.0, false);
-    tesselator.draw_floor_tile(&texture_region, 1, 1.0, 0.0, 1.0, 0.0, false);
-    tesselator.draw_floor_tile(&texture_region, 0, 2.0, 0.0, 2.0, 0.0, false);
-    tesselator.draw_floor_tile(&texture_region, 1, 3.0, 0.0, 3.0, 0.0, false);
-    let (empty_vertex_buffer, _) = factory.create_vertex_buffer_with_slice(&tesselator.tesselator.vertices, ());
+    let vertex =  Vertex { position: [0.0, 0.0, 0.0], tex_coord: [0.0, 0.0, 0.0], color: [0.0, 0.0, 0.0, 0.0], normal: [0.0, 0.0, 0.0] };
+    let vertices = [vertex];
+    let (empty_vertex_buffer, _) = factory.create_vertex_buffer_with_slice(&vertices, ());
 
     // let (empty_vertex_buffer, _) = factory.create_vertex_buffer_with_slice(&[], ());
     // data

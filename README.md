@@ -8,11 +8,11 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
-- Make launch application return a result and try! (we'd have to translate errors)
-- Fix Texture/render directions (decision time)
-- We should probably have a locals struct, simple so we can re-use the struct between pipelines (blend/non-blending versions)
+- Fix Texture/render directions (decision time for coordinate spaces)
 - Alpha blending (look at gfx-rs particle example, requires new pipeline)
-- Work out better placeholder geometry (so we can cut the Tesselator creation in fatter.rs)
+- Locals struct, simple so we can re-use the struct between pipelines (blend/non-blending versions)?
 - Put color on a diet
+- Make launch application return a result and try! (we'd have to translate errors)
+- UI rendering (unsure if we need this .... It still needs depth, just needs to be close to camera, hrm)
 - Add text rendering from ggez.rs
 
