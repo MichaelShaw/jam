@@ -56,10 +56,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [ax as f32,        (y + depth_adjust) as f32, (az + dw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32, (az + dw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32, (az + depth_adjust     ) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [ax as f32,        (y + depth_adjust) as f32, (az + depth_adjust     ) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+            Vertex { position: [ax as f32,        (y + depth_adjust) as f32, (az + dw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32, (az + dw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32, (az + depth_adjust     ) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [ax as f32,        (y + depth_adjust) as f32, (az + depth_adjust     ) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS }
         ]);
     }
 
@@ -105,10 +105,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [ax as f32,        (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [ax as f32,        (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS }
+            Vertex { position: [ax as f32,        (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + ww) as f32, (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [ax as f32,        (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS }
         ]);
     }
 
@@ -128,10 +128,10 @@ impl GeometryTesselator {
 
 
         self.tesselator.add_quad([
-            Vertex { position: [(ax - hww) as f32, (y + depth_adjust) as f32, (az + hdw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + hww) as f32, (y + depth_adjust) as f32, (az + hdw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + hww) as f32, (y + depth_adjust) as f32, (az - hdw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax - hww) as f32, (y + depth_adjust) as f32, (az - hdw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS }
+            Vertex { position: [(ax - hww) as f32, (y + depth_adjust) as f32, (az + hdw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + hww) as f32, (y + depth_adjust) as f32, (az + hdw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + hww) as f32, (y + depth_adjust) as f32, (az - hdw + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax - hww) as f32, (y + depth_adjust) as f32, (az - hdw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS }
         ]);
     }
 
@@ -145,7 +145,7 @@ impl GeometryTesselator {
         let hww = (tr.width() as f64) * self.scale.x / 2.0;
         let hdw = (tr.height() as f64) * self.scale.z / 2.0;
 
-        let rot : Matrix3<f64> = Matrix3::from_angle_y(Rad(theta));
+        let rot : Matrix3<f64> = Matrix3::from_angle_y(Rad(-theta));
 
         let p0 = rot.transform_point(Point3::new(- hww, 0.0, hdw));
         let p1 = rot.transform_point(Point3::new(hww,   0.0, hdw));
@@ -157,10 +157,10 @@ impl GeometryTesselator {
         let zz = az + depth_adjust;
 
         self.tesselator.add_quad([
-            Vertex { position: [(p0.x + xx) as f32, (p0.y + yy + depth_adjust) as f32, (p0.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_min(), tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(p1.x + xx) as f32, (p1.y + yy + depth_adjust) as f32, (p1.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_max(), tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(p2.x + xx) as f32, (p2.y + yy + depth_adjust) as f32, (p2.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_max(), tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(p3.x + xx) as f32, (p3.y + yy + depth_adjust) as f32, (p3.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_min(), tr.nv_max(), layer_f], color: self.color, normal: Y_POS }
+            Vertex { position: [(p0.x + xx) as f32, (p0.y + yy + depth_adjust) as f32, (p0.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_min(), tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(p1.x + xx) as f32, (p1.y + yy + depth_adjust) as f32, (p1.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_max(), tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(p2.x + xx) as f32, (p2.y + yy + depth_adjust) as f32, (p2.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_max(), tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(p3.x + xx) as f32, (p3.y + yy + depth_adjust) as f32, (p3.z + zz + depth_adjust) as f32], tex_coord: [tr.nu_min(), tr.nv_min(), layer_f], color: self.color, normal: Y_POS }
         ]);
     }
 
@@ -178,10 +178,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [(ax - hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax - hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+            Vertex { position: [(ax - hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax - hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS }
         ]);
     }
 
@@ -199,10 +199,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [(ax - hww) as f32, (ay - hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + hww) as f32, (ay - hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax + hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(ax - hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+            Vertex { position: [(ax - hww) as f32, (ay - hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay - hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax - hww) as f32, (ay + hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS }
         ]);
     }
 }

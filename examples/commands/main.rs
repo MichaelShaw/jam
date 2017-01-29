@@ -19,7 +19,6 @@ use jam::render::renderer;
 use jam::render::renderer::Command::*;
 use jam::render::renderer::{Seconds, Dimensions, Application, Command, Uniforms};
 
-
 use cgmath::Rad;
 
 
@@ -71,10 +70,30 @@ impl App {
             v_max: 128,
             texture_size: 128,
         };
+
+        let texture_region_small = TextureRegion {
+            u_min: 16,
+            u_max: 32,
+            v_min: 16,
+            v_max: 32,
+            texture_size: 128,
+        };
         
         let mut t = self.tesselator();
         t.color = color.float_raw();
         t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
+        t.color = color::RED.float_raw();
+        t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
+        t.color = color::GREEN.float_raw();
+        t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+        t.color = color::YELLOW.float_raw();
+
+        t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, PI / 4.0, 0.1);
+
+        t.color = color::RED.float_raw();
+        t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+        t.color = color::YELLOW.float_raw();
+        t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
         t
     }
 }
@@ -85,6 +104,7 @@ impl Application for App {
     }
 
     fn render(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command> {
+        // println!("render with delta -> {:?}", delta_time);
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);

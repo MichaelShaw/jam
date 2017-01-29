@@ -8,7 +8,6 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
-- Fix Texture/render directions (decision time for coordinate spaces)
 - Alpha blending (look at gfx-rs particle example, requires new pipeline)
 - Locals struct, simple so we can re-use the struct between pipelines (blend/non-blending versions)?
 - Put color on a diet
