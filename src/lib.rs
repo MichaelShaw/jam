@@ -8,10 +8,6 @@ extern crate glutin;
 
 extern crate time;
 
-extern crate alto;
-extern crate ogg;
-extern crate lewton;
-
 extern crate cgmath;
 extern crate image;
 extern crate fnv;
@@ -27,7 +23,6 @@ pub mod camera;
 pub mod input;
 pub mod geometry;
 pub mod spring;
-pub mod audio;
 pub mod color;
 
 use fnv::FnvHasher;
@@ -48,29 +43,15 @@ pub type JamResult<T> = Result<T, JamError>;
 pub enum JamError {
     IO(io::Error),
     Pipeline(gfx::PipelineStateError<String>),
-    Vorbis(lewton::VorbisError),
-    Alto(alto::AltoError),
     FileDoesntExist(PathBuf),
     TooManyChannels,
     NoSound(String),
     NoFreeSource(bool), // bool is for streaming
 }
 
-impl From<lewton::VorbisError> for JamError {
-    fn from(val: lewton::VorbisError) -> JamError {
-        JamError::Vorbis(val)
-    }
-}
-
 impl From<io::Error> for JamError {
     fn from(val: io::Error) -> JamError {
         JamError::IO(val)
-    }
-}
-
-impl From<alto::AltoError> for JamError {
-    fn from(val: alto::AltoError) -> JamError {
-        JamError::Alto(val)
     }
 }
 

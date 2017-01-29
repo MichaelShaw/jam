@@ -13,18 +13,7 @@ cgmath = "0.12"
 fnv = "1.0"
 notify = "3.0"
 time = "0.1"
-lewton = "0.4"
-alto = "1.0"
-ogg = "*"
 
 [[example]]
 name = "commands"
 path = "examples/commands/main.rs"
-
-[[example]]
-name = "sound"
-path = "examples/sound/main.rs"
-
-[[example]]
-name = "sound_engine"
-path = "examples/sound_engine/main.rs"
