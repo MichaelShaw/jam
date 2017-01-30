@@ -8,6 +8,7 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
+- Make dimensions a struct that includes scaling (there's no hope for a good experience without DPI/scaling)
 - Alpha blending (look at gfx-rs particle example, requires new pipeline) ... we 
 - UI rendering ... just clear depth before?
 - Add text rendering from ggez.rs

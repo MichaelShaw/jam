@@ -13,7 +13,12 @@ cgmath = "0.12"
 fnv = "1.0"
 notify = "3.0"
 time = "0.1"
+rusttype = "0.2"
 
 [[example]]
 name = "commands"
 path = "examples/commands/main.rs"
+
+[[example]]
+name = "text"
+path = "examples/text/main.rs"
