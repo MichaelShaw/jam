@@ -9,9 +9,8 @@ cargo run --example commands
 
 # Todo
 - Alpha blending (look at gfx-rs particle example, requires new pipeline) ... we 
-- Locals struct, simple so we can re-use the struct between pipelines (blend/non-blending versions)??
-- Put color on a diet
-- Make launch application return a result and try! (we'd have to translate errors)
 - UI rendering ... just clear depth before?
 - Add text rendering from ggez.rs
+- Make launch application return a result and try! (we'd have to translate errors)
+- Put color on a diet, [u8; 4]? I like being able to brighten though .... :-/ hrm
 
