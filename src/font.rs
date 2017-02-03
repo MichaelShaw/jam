@@ -11,6 +11,7 @@ use std::ops::Range;
 
 use rusttype::{FontCollection, Scale, point};
 
+use std::fmt;
 
 #[derive(Debug, Clone)]
 pub struct FontDescription {
@@ -22,7 +23,7 @@ pub struct FontDescription {
 #[derive(Debug)]
 pub struct BitmapGlyph {
 	pub texture_region: TextureRegion,
-	pub advance: i32,
+	pub advance: i32, // I think advance should always be u32 ... right?!
 }
 
 pub struct BitmapFont {
@@ -32,6 +33,13 @@ pub struct BitmapFont {
 	pub kerning: HashMap<(char, char), i32>,
 }
 
+impl fmt::Debug for BitmapFont {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "BitmapFont {{ description: {:?} glyphs: {:?} kerning: {:?} }}", self.description, self.glyphs, self.kerning)
+    }
+}
+
+#[derive(Debug)]
 pub enum FontLoadError {
 	CouldntLoadFile(PathBuf, io::Error),
 	CouldntReadAsFont(PathBuf),
@@ -39,7 +47,7 @@ pub enum FontLoadError {
 }
 
 
-fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<BitmapFont, FontLoadError> {
+pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<BitmapFont, FontLoadError> {
     let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
     println!("full_path -> {:?}", full_path);
     let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.clone(), io))?;
@@ -118,12 +126,21 @@ fn build_font(resource_path: &str, font_description: &FontDescription) -> Result
 		}
     }
 
-    // HashMap<(char, char), i32>
-
+	let mut kerning_map : HashMap<(char, char), i32> = HashMap::default();
+	
+	for &from in &chars {
+    	for &to in &chars {
+    		let kerning = font.pair_kerning(scale, from, to);
+    		if kerning != 0.0 {
+    			kerning_map.insert((from,to), kerning as i32);
+    		}
+    	}
+	}
+    
     Ok(BitmapFont {
 		description: font_description.clone(),
 		image: img,
 		glyphs: glyphs,
-		kerning: HashMap::default(),
+		kerning: kerning_map,
 	})
 }

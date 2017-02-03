@@ -150,7 +150,7 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     let mut input_state = InputState::default();
 
-    let (w, h) = dimensions;
+    // let (w, h) = dimensions;
 
     let monitor = {
         for (num, monitor) in glutin::get_available_monitors().enumerate() {
