@@ -1,5 +1,8 @@
 #![allow(dead_code)]
 
+
+extern crate jam;
+
 extern crate image;
 extern crate rusttype;
 extern crate time;
@@ -15,9 +18,59 @@ use std::io::Read;
 
 use image::{RgbaImage, Rgba};
 
+use jam::render::TextureRegion;
+use jam::HashMap;
+
+#[derive(Debug)]
+pub struct FontDescription {
+	pub family: String,
+	pub point_size: u32, // what about, what code points do you want ... and what 
+	pub image_size: u32,
+}
+
+#[derive(Debug)]
+pub struct BitmapGlyph {
+	pub texture_region: TextureRegion,
+	pub advance: u32,
+}
+
+pub struct BitmapFont {
+	pub description: FontDescription,
+	pub image: RgbaImage,
+	pub glyphs: HashMap<char, BitmapGlyph>,
+	pub kerning: HashMap<(char, char), u32>,
+}
+
+pub enum FontLoadError {
+	CouldntLoadFile(PathBuf, io::Error),
+	What,
+}
+
+fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<BitmapFont, FontLoadError> {
+    let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
+    println!("full_path -> {:?}", full_path);
+    let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path, io))?;
+	let collection = FontCollection::from_bytes(&font_data[..]);
+	let font = collection.into_font(); // this is an option
+
+    Err(FontLoadError::What)
+}
+
 fn main() {
+	let font_description = FontDescription {
+		family: "DejaVuSerif".into(),
+		point_size: 48,
+		image_size: 512,
+	};
+
+
+
 	let image_size = 512;
+
+
 	let mut img = RgbaImage::from_pixel(image_size, image_size, Rgba { data: [25,25,25,255] });
+
+
 
 	let start_time = time::precise_time_ns();
 	let font_path = PathBuf::from("./resources/fonts/DejaVuSerif.ttf");

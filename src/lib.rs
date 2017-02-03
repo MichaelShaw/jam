@@ -13,19 +13,27 @@ extern crate image;
 extern crate fnv;
 
 extern crate notify;
+extern crate rusttype;
 
-pub mod render ;
+pub mod render;
 pub mod camera;
 pub mod input;
 pub mod geometry;
 pub mod spring;
 pub mod color;
+pub mod font;
 
 use fnv::FnvHasher;
 use std::collections::{HashMap as StdHashMap, HashSet as StdHashSet};
 use std::hash::BuildHasherDefault;
-use std::io;
+
 use std::path::PathBuf;
+use std::path::Path;
+
+use std::fs::File;
+
+use std::io;
+use std::io::Read;
 
 pub type HashMap<K, V> = StdHashMap<K, V, BuildHasherDefault<FnvHasher>>;
 pub type HashSet<V> = StdHashSet<V, BuildHasherDefault<FnvHasher>>;
@@ -117,4 +125,11 @@ pub fn round_down(f:f64) -> i32 {
 
 pub fn round_down_v3(v:Vec3) -> Vec3i {
     Vec3i::new(round_down(v.x), round_down(v.y), round_down(v.z))
+}
+
+pub fn load_file_contents(path:&Path) -> io::Result<Vec<u8>> {
+    let mut file = try!(File::open(path));
+    let mut buffer : Vec<u8> = Vec::new();
+    try!(file.read_to_end(&mut buffer));
+    Ok(buffer)
 }

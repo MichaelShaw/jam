@@ -22,3 +22,7 @@ path = "examples/commands/main.rs"
 [[example]]
 name = "text"
 path = "examples/text/main.rs"
+
+[[example]]
+name = "winit"
+path = "examples/winit/main.rs"

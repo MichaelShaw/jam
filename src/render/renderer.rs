@@ -134,6 +134,8 @@ struct Vertices<R> where R: gfx::Resources {
     slice : gfx::Slice<R>,
 }
 
+use std::io::{self, Write};
+
 pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: TextureDirectory, dimensions: Dimensions) where T: Application {
     println!("shader pair -> {:?}", shader_pair);
 
@@ -149,11 +151,30 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
     let mut input_state = InputState::default();
 
     let (w, h) = dimensions;
+
+    let monitor = {
+        for (num, monitor) in glutin::get_available_monitors().enumerate() {
+            println!("Monitor #{}: {:?}", num, monitor.get_name());
+        }
+
+        print!("Please write the number of the monitor to use: ");
+        io::stdout().flush().unwrap();
+
+        let mut num = String::new();
+        io::stdin().read_line(&mut num).unwrap();
+        let num = num.trim().parse().ok().expect("Please enter a number");
+        let monitor = glutin::get_available_monitors().nth(num).expect("Please enter a valid ID");
+
+        println!("Using {:?}", monitor.get_name());
+
+        monitor
+    };
     
     let builder = glutin::WindowBuilder::new()
         .with_title("Fat example".to_string())
-        .with_dimensions(w, h)
+        // .with_dimensions(w, h)
         .with_vsync()
+        .with_fullscreen(monitor)
         .with_gl_profile(GlProfile::Core)
         .with_gl(GlRequest::Specific(Api::OpenGl,(3,3)));
 
