@@ -32,6 +32,7 @@ use std::path::Path;
 
 use std::fs::File;
 
+
 use std::io;
 use std::io::Read;
 
@@ -48,9 +49,6 @@ pub enum JamError {
     IO(io::Error),
     Pipeline(gfx::PipelineStateError<String>),
     FileDoesntExist(PathBuf),
-    TooManyChannels,
-    NoSound(String),
-    NoFreeSource(bool), // bool is for streaming
 }
 
 impl From<io::Error> for JamError {

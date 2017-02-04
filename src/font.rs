@@ -116,7 +116,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
 					},
 					advance: advance,
 				};
-
+				
 				glyphs.insert(c, bitmap_glyph);
 				write_x += (bb.max.x + padding) as i32;
 				// println!("{:?} ->  h_metrics are {:?} and bb is {:?} bearing {:?} advance {:?}", c, h_metrics, bb, bearing, advance);
@@ -127,12 +127,13 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
     }
 
 	let mut kerning_map : HashMap<(char, char), i32> = HashMap::default();
-	
+
 	for &from in &chars {
     	for &to in &chars {
     		let kerning = font.pair_kerning(scale, from, to);
-    		if kerning != 0.0 {
-    			kerning_map.insert((from,to), kerning as i32);
+    		let kerning_i : i32 = kerning.round() as i32;
+    		if kerning_i != 0 {
+    			kerning_map.insert((from,to), kerning_i);
     		}
     	}
 	}
