@@ -42,8 +42,6 @@ fn main() {
     
     let texture_dir = TextureDirectory::for_path("resources/textures");
 
-
-
     renderer::run_app(app, shader_pair, texture_dir, (600, 600));
 }
 

@@ -6,28 +6,8 @@ use image;
 use image::GenericImage;
 use std::fmt;
 
-// hot loading ability for texture arrays
-// load files from a single directory
-
-#[derive(Debug)]
-pub enum LoadError {
-    IOError(io::Error),
-    ImageError(image::ImageError),
-    NoFiles,
-    MismatchingDimensions, // path buf, expectation
-}
-
-impl From<io::Error> for LoadError {
-    fn from(err: io::Error) -> Self {
-        LoadError::IOError(err)
-    }
-}
-
-impl From<image::ImageError> for LoadError {
-    fn from(err: image::ImageError) -> Self {
-        LoadError::ImageError(err)
-    }
-}
+use JamResult;
+use JamError;
 
 #[derive(Debug)]
 pub struct TextureDirectory {
@@ -41,7 +21,7 @@ impl TextureDirectory {
         }
     }
 
-    pub fn load(&self) -> Result<TextureArrayData, LoadError> {
+    pub fn load(&self) -> JamResult<TextureArrayData> {
         load_directory(&self.path)
     }
 
@@ -56,7 +36,7 @@ impl TextureDirectory {
     }
 }
 
-pub fn read_directory_paths(path:&Path) -> io::Result<Vec<PathBuf>> {
+pub fn read_directory_paths(path:&Path) -> JamResult<Vec<PathBuf>> {
     let mut paths : Vec<PathBuf> = Vec::new();
 
     for entry in try!(fs::read_dir(path)) {
@@ -68,7 +48,7 @@ pub fn read_directory_paths(path:&Path) -> io::Result<Vec<PathBuf>> {
     Ok(paths)
 }
 
-pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
+pub fn load_directory(path:&Path) -> JamResult<TextureArrayData> {
     let mut file_data : Vec<Vec<u8>> = Vec::new();
 
     let mut dimensions : Option<Dimensions> = None;
@@ -87,7 +67,7 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
 
         if let Some(ed) = dimensions {
             if ed != (w, h) {
-                return Err(LoadError::MismatchingDimensions);
+                return Err(JamError::MismatchingDimensions);
             }
         } else {
             dimensions = Some((w, h));
@@ -104,7 +84,7 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
             data: file_data,
         })
     } else {
-        Err(LoadError::NoFiles)
+        Err(JamError::NoFiles)
     }    
 }
 

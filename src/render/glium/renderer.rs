@@ -10,6 +10,7 @@ use render::texture_array::TextureDirectory;
 use {Mat4};
 use JamError;
 use input;
+use HashMap;
 use input::InputState;
 use color::{Color, rgb};
 
@@ -18,6 +19,7 @@ use std::sync::mpsc::{channel, Receiver};
 use notify::{RecommendedWatcher, Watcher, RecursiveMode, RawEvent};
 
 use super::window;
+use render::command::Command::*;
 use render::command::Command;
 use render::{Dimensions, Seconds};
 
@@ -52,8 +54,6 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
     let mut input_state = InputState::default();
 
-    // let texture_data = texture_directory.load().expect("texture data");
-    // let texture_array = texture_data.load(&display);
 
 
     let mut program : Option<Program> = None;
@@ -61,17 +61,24 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
     // vertex buffers?! ... some kinda map
 
+
+
     let mut last_time = time::precise_time_ns();
 
     'main: loop {
         let (reload_program, reload_texture) = check_reload(&notifier_rx, &shader_pair, &texture_directory);
 
         if reload_program || program.is_none() {
-            println!("reload program");
+            let program_load_result = shader_pair.load().and_then(|shader_data| shader_data.load(&display));
+            println!("program load result -> {:?}", program_load_result);
+            program = program_load_result.ok();
         }
         
         if reload_texture || texture_array.is_none() {
             println!("reload texture");
+            let texture_load_result = texture_directory.load().and_then(|texture_data| texture_data.load(&display));
+            println!("texture load result -> {:?}", texture_load_result);
+            texture_array = texture_load_result.ok();
         }
 
         let events : Vec<glutin::Event> = display.poll_events().collect();
@@ -98,8 +105,67 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
             let sky_blue = rgb(132, 193, 255);
 
             target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
+
+            let mut close_after = false;
+
+            for command in commands {
+                // println!("received command -> {:?}", command);
+                match command {
+                    Delete { prefix } => {
+                        // let keys_to_remove : Vec<String> = vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
+                        // for key in keys_to_remove.iter() {
+                        //     // println!("deleting {:?}", key);
+                        //     vertex_buffers.remove(key);
+                        // }
+                    },
+                    Update { key, vertices } => {
+                        // let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&vertices, ());
+                        // vertex_buffers.insert(key, Vertices {
+                        //     buffer: vertex_buffer,
+                        //     slice: slice,
+                        // });
+                    },
+                    Draw { key, uniforms } => {
+                        // if let Some(vertices) = vertex_buffers.get(&key) {
+                        //     data.vbuf = vertices.buffer.clone();
+                        //     data.u_matrix = uniforms.transform;
+                        //     data.u_color = uniforms.color.float_raw();
+                        //     if let Some(ref ps) = pso {
+                        //         encoder.draw(&vertices.slice, &ps, &data);
+                        //     }
+                        // } else {
+                        //     // println!("couldnt draw for {:?}", key);
+                        // }
+                    },
+                    DrawNew { key , vertices, uniforms } => {
+                        // let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&vertices, ());
+
+                        // if let Some(name) = key {
+                        //     vertex_buffers.insert(name, Vertices {
+                        //         buffer: vertex_buffer.clone(),
+                        //         slice: slice.clone(),
+                        //     });
+                        // }
+                        // data.vbuf = vertex_buffer;
+                        // data.u_matrix = uniforms.transform;
+                        // data.u_color = uniforms.color.float_raw();
+
+                        // if let Some(ref ps) = pso {
+                            // encoder.draw(&slice, &ps, &data);
+                        // }
+                    },
+                    Close => {
+                        close_after = true;
+                    },
+                }
+            }
+
             // target.draw(&vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &rs.program, &uniforms, &opaque_draw_params()).unwrap();
             target.finish().unwrap();    
+
+            if close_after {
+                break 'main;
+            }
         } else {
             use std::{thread, time};
             println!("can't render, we're missing resources");

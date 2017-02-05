@@ -45,6 +45,17 @@ pub type JamResult<T> = Result<T, JamError>;
 pub enum JamError {
     IO(io::Error),
     FileDoesntExist(PathBuf),
+    ProgramLoadError(glium::ProgramCreationError),
+    TextureLoadError(glium::texture::TextureCreationError),
+    ImageError(image::ImageError),
+    NoFiles,
+    MismatchingDimensions, // path buf, expectation
+}
+
+impl From<image::ImageError> for JamError {
+    fn from(err: image::ImageError) -> Self {
+        JamError::ImageError(err)
+    }
 }
 
 impl From<io::Error> for JamError {

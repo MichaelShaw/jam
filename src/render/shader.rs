@@ -3,6 +3,8 @@ use std::path::{PathBuf, Path};
 use std::fs::File;
 use std::io::Read;
 
+use JamResult;
+
 #[derive(Debug, Eq, PartialEq)]
 pub struct ShaderPair {
     pub vertex_path: PathBuf,
@@ -28,7 +30,7 @@ impl ShaderPair {
         }
     }
 
-    pub fn load(&self) -> io::Result<ShaderData> {
+    pub fn load(&self) -> JamResult<ShaderData> {
         let vertex_data = try!(load_file_contents(&self.vertex_path));
         let fragment_data = try!(load_file_contents(&self.fragment_path));
         
