@@ -48,8 +48,6 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
     let mut input_state = InputState::default();
 
-
-
     let mut program : Option<Program> = None;
     let mut texture_array : Option<Texture2dArray> = None;
     let mut vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>> = HashMap::default();
@@ -77,10 +75,12 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
         let (width_pixels, height_pixels) = display.get_framebuffer_dimensions();
 
+        let scale : f32 = display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
+
         let dimensions = Dimensions {
             width_pixels: width_pixels,
             height_pixels:height_pixels,
-            scale: 1.0,
+            scale: scale,
         };
         
 
