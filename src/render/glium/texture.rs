@@ -2,8 +2,6 @@
 use glium;
 use glium::texture;
 
-use std::path::Path;
-
 use render::texture_array::TextureArrayData;
 
 use JamResult;

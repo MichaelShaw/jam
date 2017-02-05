@@ -9,6 +9,7 @@ cargo run --example commands
 
 # Todo
 - Cleanup vertex naming
+- Is Initial dimensions pixels or points .... we probably need seperate structs to avoid mistakes .... and a scale factor ... to allow translation.
 
 - Alpha blending (look at gfx-rs particle example, requires new pipeline) ... we 
 

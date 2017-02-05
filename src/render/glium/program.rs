@@ -1,5 +1,5 @@
 use glium;
-use glium::{Program, ProgramCreationError};
+use glium::Program;
 use render::shader::ShaderData;
 use {JamResult, JamError};
 
@@ -28,19 +28,10 @@ pub fn opaque_draw_params<'a>() -> glium::DrawParameters<'a> {
     draw_parameters
 }
 
-use render::vertex::Vertex;
-
-
-
 impl ShaderData {
     pub fn load(&self, display: &glium::Display) -> JamResult<Program> {
         let vertex_shader = String::from_utf8(self.vertex_data.clone()).unwrap();
         let fragment_shader = String::from_utf8(self.fragment_data.clone()).unwrap();
-
-        println!("vert -> {:?}", vertex_shader);
-
-        println!("frag -> {:?}", fragment_shader);
-
         Program::from_source(display, &vertex_shader, &fragment_shader, None).map_err(JamError::ProgramLoadError)
     }    
 }

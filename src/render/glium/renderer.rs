@@ -1,4 +1,4 @@
-use glium;
+
 use glium::{Program, Surface};
 use glium::texture::{Texture2dArray};
 use glium::VertexBuffer;
@@ -8,12 +8,10 @@ use glutin;
 use render::shader::ShaderPair;
 use render::texture_array::TextureDirectory;
 
-use {Mat4};
-use JamError;
 use input;
 use HashMap;
 use input::InputState;
-use color::{Color, rgb};
+use color::{rgb};
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -39,7 +37,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
     
     app.new();
 
-    let display = window::create_window("mah window", true);
+    let display = window::create_window("mah window", true, initial_dimensions);
 
     let (tx, notifier_rx) = channel::<RawEvent>();
     // , Duration::from_secs(0)
@@ -138,7 +136,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                         };
 
                         target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
-                        
+
                         if let Some(name) = key {
                             vertex_buffers.insert(name,new_vertex_buffer);
                         }
