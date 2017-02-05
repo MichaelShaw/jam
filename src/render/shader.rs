@@ -28,8 +28,6 @@ impl ShaderPair {
         }
     }
 
-
-
     pub fn load(&self) -> io::Result<ShaderData> {
         let vertex_data = try!(load_file_contents(&self.vertex_path));
         let fragment_data = try!(load_file_contents(&self.fragment_path));

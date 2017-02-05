@@ -3,7 +3,6 @@
 uniform sampler2DArray u_texture_array;
 
 uniform float u_alpha_minimum;
-uniform vec3 u_sun_direction;
 
 in vec4 v_color;
 in vec3 v_tex_coord;
@@ -12,9 +11,6 @@ in vec3 v_normal;
 out vec4 f_color;
 
 void main() {
-    vec3 to_light = normalize(vec3(0.0, 1.0, 0.0));
-    float light = clamp(dot(v_normal, u_sun_direction), 0.2, 1.0);
-
     vec4 albedo_colour = texture(u_texture_array, v_tex_coord) * v_color;
     
     vec4 final_colour = albedo_colour; // * light;
@@ -24,8 +20,6 @@ void main() {
         discard;
     }
     f_color = final_colour;
-    f_color *= 1.0;
-    f_color.a = 0.2;
 }
 
 

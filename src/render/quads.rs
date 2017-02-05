@@ -3,7 +3,7 @@ extern crate cgmath;
 use {Vec3};
 use color::*;
 use cgmath::{Rad, Matrix3, Point3, Transform};
-use super::renderer::Vertex;
+use super::vertex::Vertex;
 use render::texture_region::TextureRegion;
 
 pub struct QuadTesselator<T> {

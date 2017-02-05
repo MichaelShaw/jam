@@ -2,9 +2,9 @@
 #![allow(dead_code)]
 
 #[macro_use]
-extern crate gfx;
-extern crate gfx_window_glutin;
 extern crate glutin;
+#[macro_use]
+extern crate glium;
 
 extern crate time;
 
@@ -39,15 +39,11 @@ use std::io::Read;
 pub type HashMap<K, V> = StdHashMap<K, V, BuildHasherDefault<FnvHasher>>;
 pub type HashSet<V> = StdHashSet<V, BuildHasherDefault<FnvHasher>>;
 
-pub type ColorFormat = gfx::format::Rgba8;
-pub type DepthFormat = gfx::format::DepthStencil;
-
 pub type JamResult<T> = Result<T, JamError>;
 
 #[derive(Debug)]
 pub enum JamError {
     IO(io::Error),
-    Pipeline(gfx::PipelineStateError<String>),
     FileDoesntExist(PathBuf),
 }
 

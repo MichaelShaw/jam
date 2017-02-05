@@ -4,16 +4,15 @@ version = "0.1.0"
 authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 
 [dependencies]
-gfx = "0.14"
+glium = "0.16"
 glutin = "0.7"
-gfx_window_glutin = "0.14"
-gfx_device_gl = "0.13"
 image = "0.12"
 cgmath = "0.12"
 fnv = "1.0"
 notify = "3.0"
 time = "0.1"
 rusttype = "0.2"
+
 
 [[example]]
 name = "commands"

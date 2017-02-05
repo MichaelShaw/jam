@@ -29,8 +29,6 @@ impl From<image::ImageError> for LoadError {
     }
 }
 
-type Dimensions = (u16, u16);
-
 #[derive(Debug)]
 pub struct TextureDirectory {
     pub path: PathBuf, 
@@ -84,8 +82,8 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
         let img = try!(image::open(path));
 
         let d = img.dimensions();
-        let w = d.0 as u16;
-        let h = d.1 as u16;
+        let w = d.0 as u32;
+        let h = d.1 as u32;
 
         if let Some(ed) = dimensions {
             if ed != (w, h) {
@@ -110,14 +108,9 @@ pub fn load_directory(path:&Path) -> Result<TextureArrayData, LoadError> {
     }    
 }
 
+type Dimensions = (u32, u32); // rename this as TextureDimensions?
 
-// &[&[u8]]
-// is the final needed type
-// an array of references to slices
-
-// basically you keep the TextureArrayFiles as a key, equality changes
-
-// note: we can throw this away post load ... it's a temporary construct    
+// hrm, we currently load it all in to ram in uncompressed form :-/ zero reason why this isn't streamed in as a whole
 pub struct TextureArrayData {
     pub dimensions : Dimensions,
     pub data: Vec<Vec<u8>>,
@@ -128,24 +121,3 @@ impl fmt::Debug for TextureArrayData {
         write!(f, "TextureArrayData {{  dimensions: {:?}, data: {} }}", self.dimensions, self.data.len())
     }
 }
-
-use gfx;
-use gfx::handle::Texture;
-use gfx::texture; 
-use gfx::handle::ShaderResourceView;
-
-impl TextureArrayData {
-    pub fn kind(&self) -> gfx::texture::Kind {
-        let (width, height) = self.dimensions;
-        let layers = self.data.len() as u16;
-        texture::Kind::D2Array(width, height, layers, texture::AaMode::Single)
-    } 
-
-    pub fn load<R, F, T>(&self, factory: &mut F) -> Result<(Texture<R, T::Surface>, ShaderResourceView<R, T::View>), gfx::CombinedError>
-     where R: gfx::Resources, F: gfx::Factory<R>, T: gfx::format::TextureFormat {
-        let some_shit : Vec<_> = self.data.iter().map(|d| &d[..]).collect();
-        
-        factory.create_texture_immutable_u8::<T>(self.kind(), &some_shit)
-    }
-}
-
