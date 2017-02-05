@@ -36,15 +36,16 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
     println!("shader pair -> {:?}", shader_pair);
     
     app.new();
-
-    let display = window::create_window("mah window", true, initial_dimensions);
-
+    
     let (tx, notifier_rx) = channel::<RawEvent>();
     // , Duration::from_secs(0)
     let mut watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
     watcher.watch(&shader_pair.vertex_path, RecursiveMode::Recursive).expect("watching shader vertex path");
     watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
     watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
+    
+    let display = window::create_window("mah window", true, initial_dimensions);
+    
 
     let mut input_state = InputState::default();
 
