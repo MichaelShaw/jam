@@ -8,6 +8,8 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
+- Cleanup vertex naming
+
 - Alpha blending (look at gfx-rs particle example, requires new pipeline) ... we 
 
 - UI rendering ... just clear depth before?

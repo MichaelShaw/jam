@@ -39,7 +39,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
     
     app.new();
 
-    let display = window::create_window("mah window", false);
+    let display = window::create_window("mah window", true);
 
     let (tx, notifier_rx) = channel::<RawEvent>();
     // , Duration::from_secs(0)
@@ -117,37 +117,31 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                     Draw { key, uniforms } => {
                         if let Some(vertex_buffer) = vertex_buffers.get(&key) {
                             let uniforms = uniform! {
-                                matrix: uniforms.transform,
+                                u_matrix: uniforms.transform,
                                 u_texture_array: tr,
                                 u_color: uniforms.color.float_raw(),
-                                u_alpha_minimum: 0.05_f32,
+                                u_alpha_minimum: 0.01_f32,
                             };
-
-                            target.draw(&vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
-
-                        //     data.vbuf = vertices.buffer.clone();
-                        //     data.u_matrix = uniforms.transform;
-                        //     data.u_color = uniforms.color.float_raw();
+                            target.draw(vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
                         } else {
                             // println!("couldnt draw for {:?}", key);
                         }
                     },
                     DrawNew { key , vertices, uniforms } => {
-                        // let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&vertices, ());
+                        let new_vertex_buffer = VertexBuffer::persistent(&display,&vertices).unwrap();
 
-                        // if let Some(name) = key {
-                        //     vertex_buffers.insert(name, Vertices {
-                        //         buffer: vertex_buffer.clone(),
-                        //         slice: slice.clone(),
-                        //     });
-                        // }
-                        // data.vbuf = vertex_buffer;
-                        // data.u_matrix = uniforms.transform;
-                        // data.u_color = uniforms.color.float_raw();
+                        let uniforms = uniform! {
+                            u_matrix: uniforms.transform,
+                            u_texture_array: tr,
+                            u_color: uniforms.color.float_raw(),
+                            u_alpha_minimum: 0.01_f32,
+                        };
 
-                        // if let Some(ref ps) = pso {
-                            // encoder.draw(&slice, &ps, &data);
-                        // }
+                        target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
+                        
+                        if let Some(name) = key {
+                            vertex_buffers.insert(name,new_vertex_buffer);
+                        }
                     },
                     Close => {
                         close_after = true;
