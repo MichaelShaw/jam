@@ -1,7 +1,8 @@
 use glium;
 use glium::{Program, Surface};
 use glium::texture::{Texture2dArray};
-
+use glium::VertexBuffer;
+use glium::index;
 use glutin;
 
 use render::shader::ShaderPair;
@@ -19,24 +20,19 @@ use std::sync::mpsc::{channel, Receiver};
 use notify::{RecommendedWatcher, Watcher, RecursiveMode, RawEvent};
 
 use super::window;
+use super::program;
+use render::command::*;
 use render::command::Command::*;
-use render::command::Command;
 use render::{Dimensions, Seconds};
+use render::vertex::Vertex;
 
 use time;
-
-pub struct Renderer {
-
-}
-
 
 
 pub trait Application {
     fn new(&mut self);
     fn render(&mut self, input:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command>; // sizing (window) ?
 }
-
-
 
 pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_directory: TextureDirectory, initial_dimensions: (u32, u32)) {
     println!("shader pair -> {:?}", shader_pair);
@@ -58,10 +54,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
     let mut program : Option<Program> = None;
     let mut texture_array : Option<Texture2dArray> = None;
-
-    // vertex buffers?! ... some kinda map
-
-
+    let mut vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>> = HashMap::default();
 
     let mut last_time = time::precise_time_ns();
 
@@ -112,30 +105,32 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                 // println!("received command -> {:?}", command);
                 match command {
                     Delete { prefix } => {
-                        // let keys_to_remove : Vec<String> = vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
-                        // for key in keys_to_remove.iter() {
-                        //     // println!("deleting {:?}", key);
-                        //     vertex_buffers.remove(key);
-                        // }
+                        let keys_to_remove : Vec<String> = vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
+                        for key in keys_to_remove.iter() {
+                            vertex_buffers.remove(key);
+                        }
                     },
                     Update { key, vertices } => {
-                        // let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&vertices, ());
-                        // vertex_buffers.insert(key, Vertices {
-                        //     buffer: vertex_buffer,
-                        //     slice: slice,
-                        // });
+                        let new_vertex_buffer = VertexBuffer::persistent(&display,&vertices).unwrap();
+                        vertex_buffers.insert(key, new_vertex_buffer);
                     },
                     Draw { key, uniforms } => {
-                        // if let Some(vertices) = vertex_buffers.get(&key) {
+                        if let Some(vertex_buffer) = vertex_buffers.get(&key) {
+                            let uniforms = uniform! {
+                                matrix: uniforms.transform,
+                                u_texture_array: tr,
+                                u_color: uniforms.color.float_raw(),
+                                u_alpha_minimum: 0.05_f32,
+                            };
+
+                            target.draw(&vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
+
                         //     data.vbuf = vertices.buffer.clone();
                         //     data.u_matrix = uniforms.transform;
                         //     data.u_color = uniforms.color.float_raw();
-                        //     if let Some(ref ps) = pso {
-                        //         encoder.draw(&vertices.slice, &ps, &data);
-                        //     }
-                        // } else {
-                        //     // println!("couldnt draw for {:?}", key);
-                        // }
+                        } else {
+                            // println!("couldnt draw for {:?}", key);
+                        }
                     },
                     DrawNew { key , vertices, uniforms } => {
                         // let (vertex_buffer, slice) = factory.create_vertex_buffer_with_slice(&vertices, ());

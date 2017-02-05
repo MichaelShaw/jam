@@ -30,7 +30,7 @@ pub fn opaque_draw_params<'a>() -> glium::DrawParameters<'a> {
 
 use render::vertex::Vertex;
 
-implement_vertex!(Vertex, position, tex_coord, color, normal);
+
 
 impl ShaderData {
     pub fn load(&self, display: &glium::Display) -> JamResult<Program> {
