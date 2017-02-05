@@ -13,7 +13,6 @@ notify = "3.0"
 time = "0.1"
 rusttype = "0.2"
 
-
 [[example]]
 name = "commands"
 path = "examples/commands/main.rs"
@@ -22,6 +21,3 @@ path = "examples/commands/main.rs"
 name = "text"
 path = "examples/text/main.rs"
 
-[[example]]
-name = "winit"
-path = "examples/winit/main.rs"

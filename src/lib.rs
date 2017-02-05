@@ -1,7 +1,6 @@
 #![crate_name="jam"]
 #![allow(dead_code)]
 
-#[macro_use]
 extern crate glutin;
 #[macro_use]
 extern crate glium;
