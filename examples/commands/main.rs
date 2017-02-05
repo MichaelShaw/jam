@@ -62,7 +62,7 @@ impl App {
         GeometryTesselator::new(tesselator_scale)
     }
 
-     fn raster(&self, color:Color, x:f64, z:f64) -> GeometryTesselator {
+    fn raster(&self, color:Color, x:f64, z:f64) -> GeometryTesselator {
          let texture_region = TextureRegion {
             u_min: 0,
             u_max: 128,
@@ -109,7 +109,10 @@ impl Application for App {
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
         self.camera.pixels_per_unit = self.pixels_per_unit * self.zoom;
-        self.camera.viewport = dimensions;
+
+        let (width_points, height_points) = dimensions.points();
+
+        self.camera.viewport = (width_points as u32, height_points as u32);
         
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         

@@ -101,6 +101,7 @@ pub fn lerp(a:Vec3, b:Vec3, alpha:f64) -> Vec3 {
 }
 
 pub type Vec2 = cgmath::Vector2<f64>;
+pub type Vec2f = cgmath::Vector2<f32>;
 pub type Vec2i = cgmath::Vector2<i32>;
 pub type Vec2Size = cgmath::Vector2<usize>;
 pub type Vec3i = cgmath::Vector3<i32>;

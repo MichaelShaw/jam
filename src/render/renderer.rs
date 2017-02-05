@@ -98,7 +98,19 @@ pub enum Command {
 }
 
 pub type Seconds = f64;
-pub type Dimensions = (u32, u32);
+
+#[derive(Copy, Clone, Debug)]
+pub struct Dimensions {
+    pub width_pixels:u32,
+    pub height_pixels:u32,
+    pub scale: f32,
+}
+
+impl Dimensions {
+    pub fn points(&self) -> (f32, f32) {
+        (self.width_pixels as f32 / self.scale, self.height_pixels as f32 / self.scale)
+    }
+}
 
 pub trait Application {
     fn new(&mut self);
@@ -118,8 +130,6 @@ impl fmt::Debug for Command {
     }
 }
 
-
-
 use render::shader::ShaderPair;
 use render::texture_array::TextureDirectory;
 
@@ -136,7 +146,7 @@ struct Vertices<R> where R: gfx::Resources {
 
 use std::io::{self, Write};
 
-pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: TextureDirectory, dimensions: Dimensions) where T: Application {
+pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: TextureDirectory, initial_dimensions: (u32, u32)) where T: Application {
     println!("shader pair -> {:?}", shader_pair);
 
     app.new();
@@ -150,31 +160,13 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
 
     let mut input_state = InputState::default();
 
-    // let (w, h) = dimensions;
 
-    let monitor = {
-        for (num, monitor) in glutin::get_available_monitors().enumerate() {
-            println!("Monitor #{}: {:?}", num, monitor.get_name());
-        }
-
-        print!("Please write the number of the monitor to use: ");
-        io::stdout().flush().unwrap();
-
-        let mut num = String::new();
-        io::stdin().read_line(&mut num).unwrap();
-        let num = num.trim().parse().ok().expect("Please enter a number");
-        let monitor = glutin::get_available_monitors().nth(num).expect("Please enter a valid ID");
-
-        println!("Using {:?}", monitor.get_name());
-
-        monitor
-    };
+    let (initial_width, initial_height) = initial_dimensions;
     
     let builder = glutin::WindowBuilder::new()
         .with_title("Fat example".to_string())
-        // .with_dimensions(w, h)
+        .with_dimensions(initial_width, initial_height)
         .with_vsync()
-        .with_fullscreen(monitor)
         .with_gl_profile(GlProfile::Core)
         .with_gl(GlRequest::Specific(Api::OpenGl,(3,3)));
 
@@ -293,17 +285,24 @@ pub fn fat_example<T>(mut app:T, shader_pair:ShaderPair, texture_directory: Text
         gfx_window_glutin::update_views(&window, &mut data.out_color, &mut data.out_depth);
         let (ww, hh, _, _) = data.out_color.get_dimensions();
         
-        let deeps = window.hidpi_factor();
+        let scale = window.hidpi_factor();
+
+        let dimensions = Dimensions {
+            width_pixels: ww as u32,
+            height_pixels: hh as u32,
+            scale: scale,
+        };
         
 
         let now  = time::precise_time_ns();
         let delta = ((now - last_time) as f64) / 1000000000.0;
-        let commands = app.render(&input_state, ((ww as f32 / deeps) as u32, (hh as f32  / deeps) as u32), delta);
+        let commands = app.render(&input_state, dimensions, delta);
         last_time = now;
 
 
         encoder.clear(&data.out_color, CLEAR_COLOR);
         encoder.clear_depth(&data.out_depth, 1.0);
+
 
         use self::Command::*;
 
