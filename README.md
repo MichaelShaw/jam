@@ -20,6 +20,5 @@ cargo run --example commands
 - Make launch application return a result and try! (we'd have to translate errors)
 - Put color on a diet, [u8; 4]? I like being able to brighten though .... :-/ hrm
 
-- Invert control of our renderer. Make it a thing you can call, rather than something that calls you.
 - Shorthand for building texture atlas/regions.
 
