@@ -8,9 +8,8 @@ examples/commands/main.rs
 cargo run --example commands
 
 # Todo
-- Fix up texture rendering to be nearest neighbour
-- Cleanup vertex naming/namespacing etc.
 - Is Initial dimensions pixels or points .... we probably need seperate structs to avoid mistakes .... and a scale factor ... to allow translation.
+- Cleanup vertex naming/namespacing etc.
 
 - Alpha blending (look at gfx-rs particle example, requires new pipeline) ... we 
 

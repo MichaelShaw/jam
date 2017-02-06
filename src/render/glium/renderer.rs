@@ -3,6 +3,7 @@ use glium::{Program, Surface};
 use glium::texture::{Texture2dArray};
 use glium::VertexBuffer;
 use glium::index;
+use glium;
 use glutin;
 
 use render::shader::ShaderPair;
@@ -66,8 +67,11 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
         
         if reload_texture || texture_array.is_none() {
             println!("reload texture");
-            let texture_load_result = texture_directory.load().and_then(|texture_data| texture_data.load(&display));
+            let texture_load_result = texture_directory.load().and_then(|texture_data| {
+                texture_data.load(&display)
+            });
             println!("texture load result -> {:?}", texture_load_result);
+
             texture_array = texture_load_result.ok();
         }
 
@@ -117,7 +121,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                         if let Some(vertex_buffer) = vertex_buffers.get(&key) {
                             let uniforms = uniform! {
                                 u_matrix: uniforms.transform,
-                                u_texture_array: tr,
+                                u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                                 u_color: uniforms.color.float_raw(),
                                 u_alpha_minimum: 0.01_f32,
                             };
@@ -131,7 +135,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
 
                         let uniforms = uniform! {
                             u_matrix: uniforms.transform,
-                            u_texture_array: tr,
+                            u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                             u_color: uniforms.color.float_raw(),
                             u_alpha_minimum: 0.01_f32,
                         };
