@@ -3,9 +3,12 @@ use glium;
 use glium::DisplayBuild;
 use glium::glutin::{GlRequest, GlProfile, Api, WindowBuilder};
 
+use JamResult;
+use JamError;
+
 // note (from glium): pub use backend::glutin_backend::GlutinFacade as Display;
 
-pub fn create_window(title: &str, vsync: bool, dimensions: (u32, u32)) -> glium::Display {
+pub fn create_window(title: &str, vsync: bool, dimensions: (u32, u32)) -> JamResult<glium::Display> {
 	let (width, height) = dimensions;
 
     let mut builder = WindowBuilder::new()
@@ -17,5 +20,5 @@ pub fn create_window(title: &str, vsync: bool, dimensions: (u32, u32)) -> glium:
     if vsync {
         builder = builder.with_vsync();
     }
-    builder.build_glium().unwrap()
+    builder.build_glium().map_err(JamError::WindowCreationError)
 }

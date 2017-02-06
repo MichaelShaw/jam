@@ -47,8 +47,11 @@ pub enum JamError {
     ProgramLoadError(glium::ProgramCreationError),
     TextureLoadError(glium::texture::TextureCreationError),
     ImageError(image::ImageError),
+    WindowCreationError(glium::GliumCreationError<glutin::CreationError>),
+    SwapBufferError(glium::SwapBuffersError),
     NoFiles,
     MismatchingDimensions, // path buf, expectation
+    RenderingPipelineIncomplete,
 }
 
 impl From<image::ImageError> for JamError {

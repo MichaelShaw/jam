@@ -22,103 +22,103 @@ use super::window;
 use super::program;
 use render::command::*;
 use render::command::Command::*;
-use render::{Dimensions, Seconds};
+use render::{Seconds};
+use render::dimension::Dimensions;
 use render::vertex::Vertex;
 
-use time;
+use {JamResult, JamError};
 
-
-pub trait Application {
-    fn new(&mut self);
-    fn render(&mut self, input:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command>; // sizing (window) ?
+pub struct Renderer {
+    pub shader_pair : ShaderPair,
+    pub texture_directory: TextureDirectory,
+    pub resource_file_watcher : RecommendedWatcher,
+    pub resource_file_change_events: Receiver<RawEvent>,
+    pub display: glium::Display,
+    pub input_state: InputState,
+    pub program : Option<Program>,
+    pub texture : Option<Texture2dArray>,
+    pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
 }
 
-pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_directory: TextureDirectory, initial_dimensions: (u32, u32)) {
-    println!("shader pair -> {:?}", shader_pair);
-    
-    app.new();
-    
-    let (tx, notifier_rx) = channel::<RawEvent>();
-    // , Duration::from_secs(0)
-    let mut watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
-    watcher.watch(&shader_pair.vertex_path, RecursiveMode::Recursive).expect("watching shader vertex path");
-    watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
-    watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
-    
-    let display = window::create_window("mah window", true, initial_dimensions);
-    
+impl Renderer {
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer> { //  
+        let (tx, notifier_rx) = channel::<RawEvent>();
 
-    let mut input_state = InputState::default();
+        let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
+        resource_file_watcher.watch(&shader_pair.vertex_path, RecursiveMode::Recursive).expect("watching shader vertex path");
+        resource_file_watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
+        resource_file_watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
 
-    let mut program : Option<Program> = None;
-    let mut texture_array : Option<Texture2dArray> = None;
-    let mut vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>> = HashMap::default();
+        let display = window::create_window("mah window", true, initial_dimensions)?;
+        
+        Ok(Renderer {
+            shader_pair : shader_pair,
+            texture_directory: texture_directory,
+            resource_file_watcher : resource_file_watcher,
+            resource_file_change_events: notifier_rx,
+            display: display,
+            input_state: InputState::default(),
+            program : None,
+            texture : None,
+            vertex_buffers : HashMap::default(),
+        })
+    }
 
-    let mut last_time = time::precise_time_ns();
+    pub fn begin(&mut self) -> (Dimensions, InputState) {
+        let (reload_program, reload_texture) = check_reload(&self.resource_file_change_events, &self.shader_pair, &self.texture_directory);
 
-    'main: loop {
-        let (reload_program, reload_texture) = check_reload(&notifier_rx, &shader_pair, &texture_directory);
-
-        if reload_program || program.is_none() {
-            let program_load_result = shader_pair.load().and_then(|shader_data| shader_data.load(&display));
+        if reload_program || self.program.is_none() {
+            let program_load_result = self.shader_pair.load().and_then(|shader_data| shader_data.load(&self.display));
             println!("program load result -> {:?}", program_load_result);
-            program = program_load_result.ok();
+            self.program = program_load_result.ok();
         }
         
-        if reload_texture || texture_array.is_none() {
+        if reload_texture || self.texture.is_none() {
             println!("reload texture");
-            let texture_load_result = texture_directory.load().and_then(|texture_data| {
-                texture_data.load(&display)
+            let texture_load_result = self.texture_directory.load().and_then(|texture_data| {
+                texture_data.load(&self.display)
             });
             println!("texture load result -> {:?}", texture_load_result);
-
-            texture_array = texture_load_result.ok();
+            self.texture = texture_load_result.ok();
         }
 
-        let events : Vec<glutin::Event> = display.poll_events().collect();
-        input_state = input::produce(&input_state, &events);
+        let events : Vec<glutin::Event> = self.display.poll_events().collect();
+        self.input_state = input::produce(&self.input_state, &events);
 
-        let (width_pixels, height_pixels) = display.get_framebuffer_dimensions();
+        let (width_pixels, height_pixels) = self.display.get_framebuffer_dimensions();
 
-        let scale : f32 = display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
+        let scale : f32 = self.display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
 
-        let dimensions = Dimensions {
+        (Dimensions {
             width_pixels: width_pixels,
             height_pixels:height_pixels,
             scale: scale,
-        };
-        
+        }, self.input_state.clone())
+    }
 
-        let now  = time::precise_time_ns();
-        let delta = ((now - last_time) as f64) / 1000000000.0;
-        let commands = app.render(&input_state, dimensions, delta);
-        last_time = now;
-
-
-        if let (&Some(ref pr), &Some(ref tr)) = (&program, &texture_array) {
-            let mut target = display.draw();
+    pub fn render(&mut self, commands: Vec<Command>) -> JamResult<()> {
+        if let (&Some(ref pr), &Some(ref tr)) = (&self.program, &self.texture) {
+            let mut target = self.display.draw();
 
             let sky_blue = rgb(132, 193, 255);
 
             target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
 
-            let mut close_after = false;
-
             for command in commands {
                 // println!("received command -> {:?}", command);
                 match command {
                     Delete { prefix } => {
-                        let keys_to_remove : Vec<String> = vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
+                        let keys_to_remove : Vec<String> = self.vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
                         for key in keys_to_remove.iter() {
-                            vertex_buffers.remove(key);
+                            self.vertex_buffers.remove(key);
                         }
                     },
                     Update { key, vertices } => {
-                        let new_vertex_buffer = VertexBuffer::persistent(&display,&vertices).unwrap();
-                        vertex_buffers.insert(key, new_vertex_buffer);
+                        let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
+                        self.vertex_buffers.insert(key, new_vertex_buffer);
                     },
                     Draw { key, uniforms } => {
-                        if let Some(vertex_buffer) = vertex_buffers.get(&key) {
+                        if let Some(vertex_buffer) = self.vertex_buffers.get(&key) {
                             let uniforms = uniform! {
                                 u_matrix: uniforms.transform,
                                 u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
@@ -131,7 +131,7 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                         }
                     },
                     DrawNew { key , vertices, uniforms } => {
-                        let new_vertex_buffer = VertexBuffer::persistent(&display,&vertices).unwrap();
+                        let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
 
                         let uniforms = uniform! {
                             u_matrix: uniforms.transform,
@@ -143,26 +143,14 @@ pub fn run_app<T : Application>(mut app:T, shader_pair:ShaderPair, texture_direc
                         target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
 
                         if let Some(name) = key {
-                            vertex_buffers.insert(name,new_vertex_buffer);
+                            self.vertex_buffers.insert(name,new_vertex_buffer);
                         }
-                    },
-                    Close => {
-                        close_after = true;
                     },
                 }
             }
-
-            // target.draw(&vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &rs.program, &uniforms, &opaque_draw_params()).unwrap();
-            target.finish().unwrap();    
-
-            if close_after {
-                break 'main;
-            }
+            target.finish().map_err(JamError::SwapBufferError)
         } else {
-            use std::{thread, time};
-            println!("can't render, we're missing resources");
-            let ten_millis = time::Duration::from_millis(100);
-            thread::sleep(ten_millis);
+            Err(JamError::RenderingPipelineIncomplete)
         }
     }
 }

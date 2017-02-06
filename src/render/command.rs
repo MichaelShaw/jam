@@ -19,7 +19,6 @@ pub enum Command {
     Update { key: BufferKey, vertices:BufferData }, 
     Draw { key: BufferKey, uniforms: Uniforms },
     DrawNew { key: Option<BufferKey>, vertices: BufferData, uniforms: Uniforms },
-    Close,
 }
 
 impl fmt::Debug for Command {
@@ -30,7 +29,6 @@ impl fmt::Debug for Command {
             &Update { ref key, ref vertices} => write!(f, "Update {{ key: {:?} vertices: {:?} }}", key, vertices.len()),
             &Draw { ref key, ref uniforms } => write!(f, "Draw {{ key: {:?} uniforms: {:?} }}", key, uniforms),
             &DrawNew { ref key, ref vertices, ref uniforms } => write!(f, "DrawNew {{ key: {:?} vertices: {:?} uniforms: {:?} }}", key, vertices.len(), uniforms),
-            &Close => write!(f, "Close"),
         }
     }
 }

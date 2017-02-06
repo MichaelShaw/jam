@@ -2,6 +2,7 @@
 
 extern crate jam;
 extern crate cgmath;
+extern crate time;
 
 use jam::render::ShaderPair;
 use jam::render::TextureDirectory;
@@ -17,15 +18,20 @@ use std::f64::consts::PI;
 
 use jam::render::command::*;
 use jam::render::command::Command::*;
-use jam::render::{Seconds, Dimensions};
+use jam::render::{Seconds};
+use jam::render::dimension::Dimensions;
 use jam::render::glium::renderer;
-use jam::render::glium::renderer::Application;
 use jam::render::down_size_m4;
+use jam::render::glium::renderer::Renderer;
 
 use cgmath::Rad;
 
 fn main() {
-    let app = App {
+    let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
+    let texture_dir = TextureDirectory::for_path("resources/textures");
+    let renderer = Renderer::new(shader_pair, texture_dir, (600, 600)).expect("a renderer");
+
+    let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
             at: Vec3::new(0.0, 0.0, 0.0),
@@ -35,14 +41,17 @@ fn main() {
         },
         zoom: 1.0,
         pixels_per_unit: 16.0,
-        n: 0,
+        n: 0, // frame counter
+        renderer: renderer,
     };
-    
-    let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
-    
-    let texture_dir = TextureDirectory::for_path("resources/textures");
+    app.run();
 
-    renderer::run_app(app, shader_pair, texture_dir, (600, 600));
+    /*
+                use std::{thread, time};
+            println!("can't render, we're missing resources");
+            let ten_millis = time::Duration::from_millis(100);
+            thread::sleep(ten_millis);*/
+    
 }
 
 struct App {
@@ -51,9 +60,30 @@ struct App {
     zoom : f64,
     pixels_per_unit : f64,
     n : u64,
+    renderer:Renderer,
 }
 
 impl App {
+    fn run(&mut self) {
+        let mut last_time = time::precise_time_ns();
+        'main: loop {
+            let (dimensions, input_state) = self.renderer.begin();
+            let time = time::precise_time_ns();
+            let delta_time = ((time - last_time) as f64) / 1_000_000.0;
+
+            self.update(&input_state, dimensions, delta_time);  
+
+            let commands = self.render();
+
+            self.renderer.render(commands);
+
+            last_time = time;
+            if input_state.close {
+                break;
+            }
+        }
+    }
+
     fn units_per_pixel(&self) -> f64 {
         1.0 / self.pixels_per_unit
     }
@@ -98,15 +128,8 @@ impl App {
         t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
         t
     }
-}
 
-impl Application for App {
-    fn new(&mut self) {
-        println!("new! => {:?}", self.name);
-    }
-
-    fn render(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) -> Vec<Command> {
-        // println!("render with delta -> {:?}", delta_time);
+    fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
@@ -115,9 +138,11 @@ impl Application for App {
         let (width_points, height_points) = dimensions.points();
 
         self.camera.viewport = (width_points as u32, height_points as u32);
-        
+    }
+
+    fn render(&self) -> Vec<Command> {
+        // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
-        
         
         let mut commands : Vec<Command> = Vec::new();
         
@@ -168,10 +193,6 @@ impl Application for App {
                 });
             }
         }
-
-        if input_state.close {
-            commands.push(Close);
-        }     
 
         commands
     }
