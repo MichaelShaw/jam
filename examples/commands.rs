@@ -26,6 +26,9 @@ use jam::render::glium::renderer::Renderer;
 
 use cgmath::Rad;
 
+
+
+
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures");
@@ -45,13 +48,6 @@ fn main() {
         renderer: renderer,
     };
     app.run();
-
-    /*
-                use std::{thread, time};
-            println!("can't render, we're missing resources");
-            let ten_millis = time::Duration::from_millis(100);
-            thread::sleep(ten_millis);*/
-    
 }
 
 struct App {
@@ -68,6 +64,7 @@ impl App {
         let mut last_time = time::precise_time_ns();
         'main: loop {
             let (dimensions, input_state) = self.renderer.begin();
+
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000.0;
 

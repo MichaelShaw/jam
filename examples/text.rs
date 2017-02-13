@@ -20,8 +20,6 @@ fn main() {
 	
     let font = build_font("./resources/fonts", &font_description).unwrap();
 
-    
-
     let duration = time::precise_time_ns() - start_time; 
 
     let seconds = (duration as f64) / 1_000_000_000.0;

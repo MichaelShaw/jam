@@ -1,5 +1,5 @@
 
-#[derive(Copy, Clone, Debug)]
+#[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Dimensions {
     pub width_pixels:u32,
     pub height_pixels:u32,

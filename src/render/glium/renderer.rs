@@ -38,6 +38,19 @@ pub struct Renderer {
     pub program : Option<Program>,
     pub texture : Option<Texture2dArray>,
     pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
+    pub last_dimensions : Dimensions,
+}
+
+fn dimensions_for(display : &glium::Display) -> Dimensions {
+    let (width_pixels, height_pixels) = display.get_framebuffer_dimensions();
+
+    let scale : f32 = display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
+
+    Dimensions {
+        width_pixels: width_pixels,
+        height_pixels:height_pixels,
+        scale: scale,
+    }  
 }
 
 impl Renderer {
@@ -51,6 +64,8 @@ impl Renderer {
 
         let display = window::create_window("mah window", true, initial_dimensions)?;
         
+        let dimensions = dimensions_for(&display);
+
         Ok(Renderer {
             shader_pair : shader_pair,
             texture_directory: texture_directory,
@@ -61,6 +76,7 @@ impl Renderer {
             program : None,
             texture : None,
             vertex_buffers : HashMap::default(),
+            last_dimensions : dimensions,
         })
     }
 
@@ -85,15 +101,19 @@ impl Renderer {
         let events : Vec<glutin::Event> = self.display.poll_events().collect();
         self.input_state = input::produce(&self.input_state, &events);
 
-        let (width_pixels, height_pixels) = self.display.get_framebuffer_dimensions();
+        let new_dimensions = dimensions_for(&self.display);
 
-        let scale : f32 = self.display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
+        if new_dimensions != self.last_dimensions { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
+            self.last_dimensions = new_dimensions;
+            if let Some(window) = self.display.get_window() {
+                if let Some((w, h)) = window.get_inner_size_points() {
+                    window.set_inner_size(w+1, h);
+                    window.set_inner_size(w, h);
+                }
+            }
+        }
 
-        (Dimensions {
-            width_pixels: width_pixels,
-            height_pixels:height_pixels,
-            scale: scale,
-        }, self.input_state.clone())
+        (new_dimensions, self.input_state.clone())
     }
 
     pub fn render(&mut self, commands: Vec<Command>) -> JamResult<()> {
