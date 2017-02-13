@@ -6,6 +6,7 @@ extern crate time;
 
 use jam::render::ShaderPair;
 use jam::render::TextureDirectory;
+use jam::font::FontDirectory;
 use jam::input::InputState;
 use jam::camera::Camera;
 use jam::color;
@@ -33,7 +34,9 @@ use cgmath::Rad;
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures");
-    let renderer = Renderer::new(shader_pair, texture_dir, (600, 600)).expect("a renderer");
+    let font_dir = FontDirectory::for_path("resources/fonts");
+
+    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (600, 600)).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
@@ -138,7 +141,11 @@ impl App {
         self.camera.viewport = (width_points as u32, height_points as u32);
     }
 
-    fn render(&self) -> Vec<Pass> {
+    fn render(&mut self) -> Vec<Pass> {
+        use jam::font::FontDescription;
+        let font_description = FontDescription { family: "".into(), point_size: 16 };
+        // let font = self.renderer.load_font(&font_description);
+
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         

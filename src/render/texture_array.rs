@@ -77,9 +77,13 @@ pub fn load_directory(path:&Path) -> JamResult<TextureArrayData> {
         file_data.push(image_buffer);
     }
 
-    if let Some(d)  = dimensions {
+    if let Some((w, h))  = dimensions {
         Ok(TextureArrayData {
-            dimensions: d,
+            dimensions: TextureArrayDimensions { 
+                width: w,
+                height: h,
+                layers: file_data.len() as u32,
+            },
             data: file_data,
         })
     } else {
@@ -91,7 +95,7 @@ type Dimensions = (u32, u32); // rename this as TextureDimensions?
 
 // hrm, we currently load it all in to ram in uncompressed form :-/ zero reason why this isn't streamed in as a whole
 pub struct TextureArrayData {
-    pub dimensions : Dimensions,
+    pub dimensions : TextureArrayDimensions,
     pub data: Vec<Vec<u8>>,
 }
 
@@ -99,4 +103,11 @@ impl fmt::Debug for TextureArrayData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "TextureArrayData {{  dimensions: {:?}, data: {} }}", self.dimensions, self.data.len())
     }
+}
+
+#[derive(Debug, Copy, Clone, Eq, PartialEq)]
+pub struct TextureArrayDimensions {
+    pub width: u32,
+    pub height: u32,
+    pub layers: u32,
 }

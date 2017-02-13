@@ -7,7 +7,7 @@ use glium;
 use glutin;
 
 use render::shader::ShaderPair;
-use render::texture_array::TextureDirectory;
+use render::texture_array::{TextureDirectory, TextureArrayDimensions};
 
 use input;
 use HashMap;
@@ -28,17 +28,20 @@ use render::command::Command::*;
 use render::dimension::Dimensions;
 use render::vertex::Vertex;
 
+use font::*;
+
 use {JamResult, JamError};
 
 pub struct Renderer {
     pub shader_pair : ShaderPair,
     pub texture_directory: TextureDirectory,
+    pub font_directory: FontDirectory,
     pub resource_file_watcher : RecommendedWatcher,
     pub resource_file_change_events: Receiver<RawEvent>,
     pub display: glium::Display,
     pub input_state: InputState,
     pub program : Option<Program>,
-    pub texture : Option<Texture2dArray>,
+    pub texture : Option<(Texture2dArray, TextureArrayDimensions)>,
     pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
     pub last_dimensions : Dimensions,
 }
@@ -55,7 +58,7 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
 }
 
 impl Renderer {
-    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer> { //  
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
@@ -70,6 +73,7 @@ impl Renderer {
         Ok(Renderer {
             shader_pair : shader_pair,
             texture_directory: texture_directory,
+            font_directory: font_directory,
             resource_file_watcher : resource_file_watcher,
             resource_file_change_events: notifier_rx,
             display: display,
@@ -93,7 +97,8 @@ impl Renderer {
         if reload_texture || self.texture.is_none() {
             println!("reload texture");
             let texture_load_result = self.texture_directory.load().and_then(|texture_data| {
-                texture_data.load(&self.display)
+                let dimensions = texture_data.dimensions;
+                texture_data.load(&self.display).map(|t| (t, dimensions))
             });
             println!("texture load result -> {:?}", texture_load_result);
             self.texture = texture_load_result.ok();
@@ -119,18 +124,17 @@ impl Renderer {
     }
 
     pub fn render(&mut self, passes: Vec<Pass>) -> JamResult<()> {
-        if let (&Some(ref pr), &Some(ref tr)) = (&self.program, &self.texture) {
+        if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
             let mut target = self.display.draw();
 
             let sky_blue = rgb(132, 193, 255);
 
             target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
 
-            let mut blend = program::opaque_draw_params();
             let tex = tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
 
             for pass in passes {
-                blend = program::draw_params_for_blend(pass.blend);
+                let blend = program::draw_params_for_blend(pass.blend);
 
                 for command in pass.commands {
                     // println!("received command -> {:?}", command);

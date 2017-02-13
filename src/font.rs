@@ -14,11 +14,26 @@ use rusttype::{FontCollection, Scale, point};
 use std::fmt;
 
 #[derive(Debug, Clone)]
+pub struct FontDirectory {
+    pub path: PathBuf, 
+}
+
+impl FontDirectory {
+  	pub fn for_path(path:&str) -> FontDirectory {
+        FontDirectory {
+            path: PathBuf::from(path) // convert to absolute here?
+        }
+    }
+}
+
+
+
+#[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct FontDescription {
 	pub family: String,
 	pub point_size: u32, // what about, what code points do you want ... and what 
-	pub image_size: u32,
-}
+}	
+
 
 #[derive(Debug)]
 pub struct BitmapGlyph {
@@ -51,7 +66,7 @@ pub enum FontLoadError {
 }
 
 
-pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<LoadedBitmapFont, FontLoadError> {
+pub fn build_font(resource_path: &str, font_description: &FontDescription, image_size: u32) -> Result<LoadedBitmapFont, FontLoadError> {
     let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
     println!("full_path -> {:?}", full_path);
     let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.clone(), io))?;
@@ -74,7 +89,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
 
 	let padding : i32 = 1; // to avoid texture bleeding
 
-	let mut img = RgbaImage::from_pixel(font_description.image_size, font_description.image_size, Rgba { data: [255,255,255,0] }); // transparent white
+	let mut img = RgbaImage::from_pixel(image_size, image_size, Rgba { data: [255,255,255,0] }); // transparent white
 
 	// top left write location of the next glyph
 	let mut write_x : i32 = padding;
@@ -90,7 +105,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
 			let positioned = scaled.positioned(offset);
 
 			if let Some(bb) = positioned.pixel_bounding_box() {
-				if bb.width() + write_x > font_description.image_size as i32 {
+				if bb.width() + write_x > image_size as i32 {
 					write_x = padding;
 					write_y += pixel_height + padding;
 				}
@@ -116,7 +131,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
 					    u_max: (bb.max.x + write_x) as u32,
 					    v_min: (bb.min.y + write_y) as u32,
 					    v_max:(bb.max.y + write_y) as u32,
-					    texture_size: font_description.image_size,
+					    texture_size: image_size,
 					},
 					advance: advance,
 				};
