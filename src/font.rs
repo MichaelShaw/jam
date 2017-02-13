@@ -26,9 +26,13 @@ pub struct BitmapGlyph {
 	pub advance: i32, // I think advance should always be u32 ... right?!
 }
 
+pub struct LoadedBitmapFont {
+	pub image: RgbaImage,
+	pub font: BitmapFont,
+}
+
 pub struct BitmapFont {
 	pub description: FontDescription,
-	pub image: RgbaImage,
 	pub glyphs: HashMap<char, BitmapGlyph>,
 	pub kerning: HashMap<(char, char), i32>,
 }
@@ -47,7 +51,7 @@ pub enum FontLoadError {
 }
 
 
-pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<BitmapFont, FontLoadError> {
+pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Result<LoadedBitmapFont, FontLoadError> {
     let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
     println!("full_path -> {:?}", full_path);
     let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.clone(), io))?;
@@ -138,10 +142,12 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription) -> Re
     	}
 	}
     
-    Ok(BitmapFont {
-		description: font_description.clone(),
+    Ok(LoadedBitmapFont {
 		image: img,
-		glyphs: glyphs,
-		kerning: kerning_map,
+		font: BitmapFont {
+			description: font_description.clone(),
+			glyphs: glyphs,
+			kerning: kerning_map,
+		}
 	})
 }

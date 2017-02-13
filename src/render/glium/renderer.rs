@@ -6,10 +6,6 @@ use glium::index;
 use glium;
 use glutin;
 
-use cgmath;
-use cgmath::One;
-
-use render;
 use render::shader::ShaderPair;
 use render::texture_array::TextureDirectory;
 
@@ -17,8 +13,8 @@ use input;
 use HashMap;
 use input::InputState;
 use color::{rgb};
-use color;
-use Mat4;
+
+
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -53,8 +49,7 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
     let scale : f32 = display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
 
     Dimensions {
-        width_pixels: width_pixels,
-        height_pixels:height_pixels,
+        pixels: (width_pixels, height_pixels),
         scale: scale,
     }  
 }
@@ -109,14 +104,15 @@ impl Renderer {
 
         let new_dimensions = dimensions_for(&self.display);
 
-        if new_dimensions != self.last_dimensions { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
-            self.last_dimensions = new_dimensions;
+        if new_dimensions != self.last_dimensions && Dimensions::approx_equal_point_size(new_dimensions, self.last_dimensions) { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
             if let Some(window) = self.display.get_window() {
                 if let Some((w, h)) = window.get_inner_size_points() {
                     window.set_inner_size(w+1, h);
                     window.set_inner_size(w, h);
                 }
-            }
+            }    
+            
+            self.last_dimensions = new_dimensions;
         }
 
         (new_dimensions, self.input_state.clone())
@@ -131,13 +127,7 @@ impl Renderer {
             target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
 
             let mut blend = program::opaque_draw_params();
-
-            let mut uniforms = uniform! {
-                u_matrix: render::down_size_m4(Mat4::one().into()),
-                u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                u_color: color::WHITE.float_raw(),
-                u_alpha_minimum: 0.01_f32,
-            };
+            let tex = tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
 
             for pass in passes {
                 blend = program::draw_params_for_blend(pass.blend);
@@ -159,7 +149,7 @@ impl Renderer {
                             if let Some(vertex_buffer) = self.vertex_buffers.get(&key) {
                                 let uniforms = uniform! {
                                     u_matrix: uniforms.transform,
-                                    u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                                    u_texture_array: tex,
                                     u_color: uniforms.color.float_raw(),
                                     u_alpha_minimum: 0.01_f32,
                                 };
@@ -173,7 +163,7 @@ impl Renderer {
 
                             let uniforms = uniform! {
                                 u_matrix: uniforms.transform,
-                                u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                                u_texture_array: tex,
                                 u_color: uniforms.color.float_raw(),
                                 u_alpha_minimum: 0.01_f32,
                             };
