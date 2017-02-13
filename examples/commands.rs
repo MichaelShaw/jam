@@ -18,6 +18,7 @@ use std::f64::consts::PI;
 
 use jam::render::command::*;
 use jam::render::command::Command::*;
+use jam::render::command::Blend;
 use jam::render::{Seconds};
 use jam::render::dimension::Dimensions;
 use jam::render::glium::renderer;
@@ -70,9 +71,9 @@ impl App {
 
             self.update(&input_state, dimensions, delta_time);  
 
-            let commands = self.render();
+            let render_passes = self.render();
 
-            self.renderer.render(commands);
+            self.renderer.render(render_passes);
 
             last_time = time;
             if input_state.close {
@@ -137,11 +138,13 @@ impl App {
         self.camera.viewport = (width_points as u32, height_points as u32);
     }
 
-    fn render(&self) -> Vec<Command> {
+    fn render(&self) -> Vec<Pass> {
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
-        let mut commands : Vec<Command> = Vec::new();
+        let mut opaque_commands : Vec<Command> = Vec::new();
+        let mut translucent_commands : Vec<Command> = Vec::new();
+        let mut additive_commands : Vec<Command> = Vec::new();
         
         let an = self.n / 60;
 
@@ -153,11 +156,11 @@ impl App {
             let column = (an / 4) % 4;
             let name = format!("zone_{}", column);
             println!("delete {}", name);
-            commands.push(Delete {prefix : name});
+            opaque_commands.push(Delete {prefix : name});
         }
 
         let n = (((an % 16) as f64) / 16.0 * 255.0) as u8;
-        let render_color = color::rgba(n, n, n, 128);
+
 
         for i in 0..16 {
             let xo = i % 4;
@@ -166,31 +169,54 @@ impl App {
 
             if (an % 16) == i && on_second {
                 let t = self.raster(raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                commands.push(DrawNew {
+                opaque_commands.push(DrawNew {
                     key: Some(name), 
                     vertices: t.tesselator.vertices, 
                     uniforms: Uniforms {
                         transform : down_size_m4(self.camera.view_projection().into()),
-                        color: render_color,
+                        color: color::WHITE,
                     }
-                }); 
+                });
             } else if ((an+8) % 16) == i && on_second {
-                let t = self.raster(color::GREEN, (xo * 9) as f64, (zo * 9) as f64);
-                commands.push(Update {
+                let t = self.raster(raster_color, (xo * 9) as f64, (zo * 9) as f64);
+                opaque_commands.push(Update {
                     key: name, 
                     vertices: t.tesselator.vertices,
                 }); 
             } else {
-                commands.push(Draw {
+                let rem = (xo + zo) % 3;
+
+                let color = match rem {
+                    0 => color::rgba(255,255,255, 128),
+                    1 => color::rgba(255,255,255, 50),
+                    _ => color::WHITE,
+                };
+                let command = Draw {
                     key: name,
                      uniforms: Uniforms {
                         transform: down_size_m4(self.camera.view_projection().into()),
-                        color: render_color,
+                        color: color,
                     }
-                });
+                };
+                
+                match rem {
+                    0 => translucent_commands.push(command),   
+                    1 => additive_commands.push(command),
+                    _ => opaque_commands.push(command),
+                };
             }
         }
 
-        commands
+
+        vec![Pass {
+            blend: Blend::None,
+            commands: opaque_commands,
+        }, Pass {
+            blend: Blend::Alpha,
+            commands: translucent_commands,
+        }, Pass {
+            blend: Blend::Add,
+            commands: additive_commands,
+        }]
     }
 }

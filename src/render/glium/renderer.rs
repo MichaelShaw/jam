@@ -6,6 +6,10 @@ use glium::index;
 use glium;
 use glutin;
 
+use cgmath;
+use cgmath::One;
+
+use render;
 use render::shader::ShaderPair;
 use render::texture_array::TextureDirectory;
 
@@ -13,6 +17,8 @@ use input;
 use HashMap;
 use input::InputState;
 use color::{rgb};
+use color;
+use Mat4;
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -22,7 +28,7 @@ use super::window;
 use super::program;
 use render::command::*;
 use render::command::Command::*;
-use render::{Seconds};
+
 use render::dimension::Dimensions;
 use render::vertex::Vertex;
 
@@ -116,7 +122,7 @@ impl Renderer {
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render(&mut self, commands: Vec<Command>) -> JamResult<()> {
+    pub fn render(&mut self, passes: Vec<Pass>) -> JamResult<()> {
         if let (&Some(ref pr), &Some(ref tr)) = (&self.program, &self.texture) {
             let mut target = self.display.draw();
 
@@ -124,48 +130,61 @@ impl Renderer {
 
             target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
 
-            for command in commands {
-                // println!("received command -> {:?}", command);
-                match command {
-                    Delete { prefix } => {
-                        let keys_to_remove : Vec<String> = self.vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
-                        for key in keys_to_remove.iter() {
-                            self.vertex_buffers.remove(key);
-                        }
-                    },
-                    Update { key, vertices } => {
-                        let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
-                        self.vertex_buffers.insert(key, new_vertex_buffer);
-                    },
-                    Draw { key, uniforms } => {
-                        if let Some(vertex_buffer) = self.vertex_buffers.get(&key) {
+            let mut blend = program::opaque_draw_params();
+
+            let mut uniforms = uniform! {
+                u_matrix: render::down_size_m4(Mat4::one().into()),
+                u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                u_color: color::WHITE.float_raw(),
+                u_alpha_minimum: 0.01_f32,
+            };
+
+            for pass in passes {
+                blend = program::draw_params_for_blend(pass.blend);
+
+                for command in pass.commands {
+                    // println!("received command -> {:?}", command);
+                    match command {
+                        Delete { prefix } => {
+                            let keys_to_remove : Vec<String> = self.vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
+                            for key in keys_to_remove.iter() {
+                                self.vertex_buffers.remove(key);
+                            }
+                        },
+                        Update { key, vertices } => {
+                            let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
+                            self.vertex_buffers.insert(key, new_vertex_buffer);
+                        },
+                        Draw { key, uniforms } => {
+                            if let Some(vertex_buffer) = self.vertex_buffers.get(&key) {
+                                let uniforms = uniform! {
+                                    u_matrix: uniforms.transform,
+                                    u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
+                                    u_color: uniforms.color.float_raw(),
+                                    u_alpha_minimum: 0.01_f32,
+                                };
+                                target.draw(vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &blend).unwrap();
+                            } else {
+                                // println!("couldnt draw for {:?}", key);
+                            }
+                        },
+                        DrawNew { key , vertices, uniforms } => {
+                            let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
+
                             let uniforms = uniform! {
                                 u_matrix: uniforms.transform,
                                 u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
                                 u_color: uniforms.color.float_raw(),
                                 u_alpha_minimum: 0.01_f32,
                             };
-                            target.draw(vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
-                        } else {
-                            // println!("couldnt draw for {:?}", key);
-                        }
-                    },
-                    DrawNew { key , vertices, uniforms } => {
-                        let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
 
-                        let uniforms = uniform! {
-                            u_matrix: uniforms.transform,
-                            u_texture_array: tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest),
-                            u_color: uniforms.color.float_raw(),
-                            u_alpha_minimum: 0.01_f32,
-                        };
+                            target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &blend).unwrap();
 
-                        target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &program::opaque_draw_params()).unwrap();
-
-                        if let Some(name) = key {
-                            self.vertex_buffers.insert(name,new_vertex_buffer);
-                        }
-                    },
+                            if let Some(name) = key {
+                                self.vertex_buffers.insert(name,new_vertex_buffer);
+                            }
+                        },
+                    }
                 }
             }
             target.finish().map_err(JamError::SwapBufferError)

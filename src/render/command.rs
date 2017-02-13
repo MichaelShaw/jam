@@ -32,3 +32,21 @@ impl fmt::Debug for Command {
         }
     }
 }
+
+pub struct Pass {
+    pub blend: Blend,
+    pub commands: Vec<Command>,
+}
+
+impl fmt::Debug for Pass {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "Pass {{ blend: {:?} commands: {:?} }}", self.blend, self.commands.len())
+    }
+}
+
+#[derive(Copy, Clone, Debug, Eq, PartialEq)]
+pub enum Blend {
+    None,
+    Add,
+    Alpha,
+}

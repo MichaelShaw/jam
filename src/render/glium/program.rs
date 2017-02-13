@@ -2,30 +2,63 @@ use glium;
 use glium::Program;
 use render::shader::ShaderData;
 use {JamResult, JamError};
+use glium::LinearBlendingFactor;
+use render;
+// use glium::Blend;
+
+pub fn draw_params_for_blend<'a>(blend:render::command::Blend) -> glium::DrawParameters<'a> {
+    use render::command::Blend::*;
+    match blend {
+    None => opaque_draw_params(),
+    Add => additive_draw_params(),
+    Alpha => translucent_draw_params(),
+    }
+}
 
 pub fn translucent_draw_params<'a>() -> glium::DrawParameters<'a> {
-    let draw_parameters = glium::DrawParameters {
+   glium::DrawParameters {
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
-            write: true,
+            write: false,
             .. Default::default()
         },
         blend: glium::Blend::alpha_blending(),
         .. Default::default()
-    };
-    draw_parameters
+    }
+}
+
+pub fn additive_draw_params<'a>() -> glium::DrawParameters<'a> {
+    use glium::BlendingFunction;
+    glium::DrawParameters {
+        depth: glium::Depth {
+            test: glium::draw_parameters::DepthTest::IfLess,
+            write: false,
+            .. Default::default()
+        },
+        blend: glium::Blend {
+            color: BlendingFunction::Addition {
+                source: LinearBlendingFactor::SourceAlpha,
+                destination: LinearBlendingFactor::One,
+            },
+            alpha: BlendingFunction::Addition {
+                source: LinearBlendingFactor::One,
+                destination: LinearBlendingFactor::One,
+            },
+            constant_value: (0.0, 0.0, 0.0, 0.0)
+        },
+        .. Default::default()
+    }
 }
 
 pub fn opaque_draw_params<'a>() -> glium::DrawParameters<'a> {
-    let draw_parameters = glium::DrawParameters {
+    glium::DrawParameters {
         depth: glium::Depth {
             test: glium::draw_parameters::DepthTest::IfLess,
             write: true,
             .. Default::default()
         },
         .. Default::default()
-    };
-    draw_parameters
+    }
 }
 
 impl ShaderData {
