@@ -46,6 +46,7 @@ pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
     pub texture : Option<(Texture2dArray, TextureArrayDimensions)>,
     pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
     pub last_dimensions : Dimensions,
+    pub fonts: Vec<LoadedBitmapFont>,
 }
 
 fn dimensions_for(display : &glium::Display) -> Dimensions {
@@ -84,7 +85,38 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
             texture : None,
             vertex_buffers : HashMap::default(),
             last_dimensions : dimensions,
+            fonts: Vec::new(),
         })
+    }
+
+    pub fn load_font(&mut self, font_description: &FontDescription) -> JamResult<()> {
+        let found_font = self.fonts.iter().any(|lf| &lf.font.description == font_description); // { f.font.description == font_description }
+
+        if found_font {
+            Ok(())
+        } else if let Some((_, dimensions)) = self.texture {
+            let mut full_path = self.font_directory.path.clone();
+            full_path.push(font_description.family.clone());
+            full_path.set_extension("ttf");
+
+            println!("load font {:?} with full_path -> {:?}", font_description, full_path);
+
+            let font = build_font(full_path.as_path(), font_description, dimensions.width)?;
+
+            println!("we've loaded the font, unloading the texture");
+            self.fonts.push(font);
+            self.texture = None;
+
+            Ok(())
+        } else {
+            Err(JamError::MustLoadTextureBeforeFont)
+        }
+    }
+
+    pub fn clear_fonts(&mut self) {
+        if !self.fonts.is_empty() {
+            self.fonts.clear();
+        }
     }
 
     pub fn begin(&mut self) -> (Dimensions, InputState) {

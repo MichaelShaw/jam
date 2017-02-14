@@ -46,12 +46,20 @@ pub enum JamError {
     FileDoesntExist(PathBuf),
     ProgramLoadError(glium::ProgramCreationError),
     TextureLoadError(glium::texture::TextureCreationError),
+    FontLoadError(font::FontLoadError),
     ImageError(image::ImageError),
     WindowCreationError(glium::GliumCreationError<glutin::CreationError>),
     SwapBufferError(glium::SwapBuffersError),
+    MustLoadTextureBeforeFont,
     NoFiles,
     MismatchingDimensions, // path buf, expectation
     RenderingPipelineIncomplete,
+}
+
+impl From<font::FontLoadError> for JamError {
+    fn from(err: font::FontLoadError) -> Self {
+        JamError::FontLoadError(err)
+    }
 }
 
 impl From<image::ImageError> for JamError {

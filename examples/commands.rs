@@ -143,7 +143,12 @@ impl App {
 
     fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
-        let font_description = FontDescription { family: "".into(), point_size: 16 };
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 16 };
+        let loaded = self.renderer.load_font(&font_description);
+        match loaded {
+            Err(e) => println!("font load error -> {:?}", e),
+            Ok(_) => (),
+        }
         // let font = self.renderer.load_font(&font_description);
 
         // println!("render with delta -> {:?}", delta_time);

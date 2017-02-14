@@ -3,7 +3,7 @@ use render::TextureRegion;
 use image::{RgbaImage, Rgba};
 use {HashMap, load_file_contents};
 
-use std::path::PathBuf;
+use std::path::{PathBuf, Path};
 
 use std::io;
 
@@ -26,12 +26,10 @@ impl FontDirectory {
     }
 }
 
-
-
 #[derive(Debug, Clone, Hash, Eq, PartialEq)]
 pub struct FontDescription {
 	pub family: String,
-	pub point_size: u32, // what about, what code points do you want ... and what 
+	pub pixel_size: u32, // what about, what code points do you want ... and what 
 }	
 
 
@@ -66,16 +64,14 @@ pub enum FontLoadError {
 }
 
 
-pub fn build_font(resource_path: &str, font_description: &FontDescription, image_size: u32) -> Result<LoadedBitmapFont, FontLoadError> {
-    let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
+pub fn build_font(full_path: &Path, font_description: &FontDescription, image_size: u32) -> Result<LoadedBitmapFont, FontLoadError> {
+    
     // println!("full_path -> {:?}", full_path);
-    let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.clone(), io))?;
+    let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.to_path_buf(), io))?;
 	let collection = FontCollection::from_bytes(&font_data[..]);
-	let font = collection.into_font().ok_or(FontLoadError::CouldntReadAsFont(full_path.clone()))?; // this is an option
+	let font = collection.into_font().ok_or(FontLoadError::CouldntReadAsFont(full_path.to_path_buf()))?; // this is an option
 
-
-
-	let scale = Scale { x: font_description.point_size as f32, y: font_description.point_size as f32 };
+	let scale = Scale { x: font_description.pixel_size as f32, y: font_description.pixel_size as f32 };
     let pixel_height = scale.y.ceil() as i32;
 
     // println!("pixel height {:?}", pixel_height);
@@ -84,7 +80,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription, image
     
     let offset = point(0.0, v_metrics.ascent);
 
-    let line_height = v_metrics.ascent - v_metrics.descent + v_metrics.line_gap;
+    // let line_height = v_metrics.ascent - v_metrics.descent + v_metrics.line_gap;
 
     // println!("line height -> {:?}", line_height);
 
