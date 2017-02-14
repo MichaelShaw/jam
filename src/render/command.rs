@@ -14,8 +14,9 @@ pub struct Uniforms {
     pub color: Color,
 }
 
-pub enum Command<BufferKey> {
+pub enum Command<BufferKey> { // where BufferKey : Sized 
     Delete { key: BufferKey },
+    DeleteMatching { pred: Box<Fn(&BufferKey) -> bool> },
     Update { key: BufferKey, vertices:BufferData }, 
     Draw { key: BufferKey, uniforms: Uniforms },
     DrawNew { key: Option<BufferKey>, vertices: BufferData, uniforms: Uniforms },
@@ -26,6 +27,7 @@ impl <BufferKey> fmt::Debug for Command<BufferKey> where BufferKey : Debug {
         use self::Command::*;
         match self {
             &Delete { ref key } => write!(f, "Delete {{ key: {:?} }}", key),
+            &DeleteMatching { ref pred } => write!(f, "DeleteMatching {{ pred: <function> }}"),
             &Update { ref key, ref vertices} => write!(f, "Update {{ key: {:?} vertices: {:?} }}", key, vertices.len()),
             &Draw { ref key, ref uniforms } => write!(f, "Draw {{ key: {:?} uniforms: {:?} }}", key, uniforms),
             &DrawNew { ref key, ref vertices, ref uniforms } => write!(f, "DrawNew {{ key: {:?} vertices: {:?} uniforms: {:?} }}", key, vertices.len(), uniforms),

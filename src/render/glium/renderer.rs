@@ -59,7 +59,7 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
     }  
 }
 
-impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq {
+impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
     pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer<BufferKey>> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
@@ -143,12 +143,13 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq {
                     match command {
                         Delete { key } => {
                             let _ = self.vertex_buffers.remove(&key);
-
-                            // .keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
-                            // for key in keys_to_remove.iter() {
-                                // self.vertex_buffers.remove(key);
-                            // }
                         },
+                        DeleteMatching { pred } => {
+                            let keys_to_delete : Vec<_>= self.vertex_buffers.keys().filter(|e| pred(e)).cloned().collect();
+                            for key in keys_to_delete.iter() {
+                                self.vertex_buffers.remove(key);
+                            }
+                        }
                         Update { key, vertices } => {
                             let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
                             self.vertex_buffers.insert(key, new_vertex_buffer);

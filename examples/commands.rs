@@ -161,10 +161,13 @@ impl App {
 
         if on_second && an % 5 == 0 { // every fifth second
             let column = (an / 4) % 4;
-            let name = format!("zone_{}", column);
+            let name : String = format!("zone_{}", column);
             println!("delete {}", name);
-            // opaque_commands.push(Delete {prefix : name});
+            let pred : Box<Fn(&String) -> bool> = Box::new(move |key| key.starts_with(&name));
+            opaque_commands.push(DeleteMatching { pred: pred });
         }
+
+        // k.starts_with(&prefix)
 
         let n = (((an % 16) as f64) / 16.0 * 255.0) as u8;
 
