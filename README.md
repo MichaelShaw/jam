@@ -1,8 +1,6 @@
 # jam
 Opinionated Game Jam Rendering Engine in Rust
 
-
-
 ### Main Example
 
 cargo run --example commands
@@ -12,11 +10,11 @@ cargo run --example commands
 cargon run --example text
 
 # Todo
-- Add text rendering  + font loading.
+- Add text rendering.
 - UI rendering ... just clear depth before?
 
 # Todo - Low Importance
 - Cleanup vertex naming/namespacing etc.
 - Put color on a diet, [u8; 4]? I like being able to brighten though .... :-/ hrm
-- Shorthand for building texture atlas/regions.
+- Shorthand for building texture atlas/regions. Keep animation etc. in mind
 
