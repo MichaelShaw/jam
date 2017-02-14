@@ -60,7 +60,7 @@ struct App {
     zoom : f64,
     pixels_per_unit : f64,
     n : u64,
-    renderer:Renderer,
+    renderer:Renderer<String>,
 }
 
 impl App {
@@ -101,7 +101,7 @@ impl App {
             u_max: 128,
             v_min: 0,
             v_max: 128,
-            texture_size: 128,
+            texture_size: 1024,
         };
 
         let texture_region_small = TextureRegion {
@@ -109,7 +109,7 @@ impl App {
             u_max: 32,
             v_min: 16,
             v_max: 32,
-            texture_size: 128,
+            texture_size: 1024,
         };
         
         let mut t = self.tesselator();
@@ -141,7 +141,7 @@ impl App {
         self.camera.viewport = (width_points as u32, height_points as u32);
     }
 
-    fn render(&mut self) -> Vec<Pass> {
+    fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
         let font_description = FontDescription { family: "".into(), point_size: 16 };
         // let font = self.renderer.load_font(&font_description);
@@ -149,9 +149,9 @@ impl App {
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
-        let mut opaque_commands : Vec<Command> = Vec::new();
-        let mut translucent_commands : Vec<Command> = Vec::new();
-        let mut additive_commands : Vec<Command> = Vec::new();
+        let mut opaque_commands : Vec<Command<String>> = Vec::new();
+        let mut translucent_commands : Vec<Command<String>> = Vec::new();
+        let mut additive_commands : Vec<Command<String>> = Vec::new();
         
         let an = self.n / 60;
 
@@ -163,7 +163,7 @@ impl App {
             let column = (an / 4) % 4;
             let name = format!("zone_{}", column);
             println!("delete {}", name);
-            opaque_commands.push(Delete {prefix : name});
+            // opaque_commands.push(Delete {prefix : name});
         }
 
         let n = (((an % 16) as f64) / 16.0 * 255.0) as u8;

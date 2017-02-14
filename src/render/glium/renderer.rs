@@ -32,7 +32,9 @@ use font::*;
 
 use {JamResult, JamError};
 
-pub struct Renderer {
+use std::hash::Hash;
+
+pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
     pub shader_pair : ShaderPair,
     pub texture_directory: TextureDirectory,
     pub font_directory: FontDirectory,
@@ -57,8 +59,8 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
     }  
 }
 
-impl Renderer {
-    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer> { //  
+impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq {
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer<BufferKey>> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
@@ -123,7 +125,7 @@ impl Renderer {
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render(&mut self, passes: Vec<Pass>) -> JamResult<()> {
+    pub fn render(&mut self, passes: Vec<Pass<BufferKey>>) -> JamResult<()> {
         if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
             let mut target = self.display.draw();
 
@@ -139,11 +141,13 @@ impl Renderer {
                 for command in pass.commands {
                     // println!("received command -> {:?}", command);
                     match command {
-                        Delete { prefix } => {
-                            let keys_to_remove : Vec<String> = self.vertex_buffers.keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
-                            for key in keys_to_remove.iter() {
-                                self.vertex_buffers.remove(key);
-                            }
+                        Delete { key } => {
+                            let _ = self.vertex_buffers.remove(&key);
+
+                            // .keys().filter(|k| k.starts_with(&prefix) ).cloned().collect();
+                            // for key in keys_to_remove.iter() {
+                                // self.vertex_buffers.remove(key);
+                            // }
                         },
                         Update { key, vertices } => {
                             let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
