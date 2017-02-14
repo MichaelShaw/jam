@@ -68,7 +68,7 @@ pub enum FontLoadError {
 
 pub fn build_font(resource_path: &str, font_description: &FontDescription, image_size: u32) -> Result<LoadedBitmapFont, FontLoadError> {
     let full_path = PathBuf::from(format!("{}/{}.{}", resource_path, font_description.family, "ttf"));
-    println!("full_path -> {:?}", full_path);
+    // println!("full_path -> {:?}", full_path);
     let font_data = load_file_contents(&full_path).map_err(|io| FontLoadError::CouldntLoadFile(full_path.clone(), io))?;
 	let collection = FontCollection::from_bytes(&font_data[..]);
 	let font = collection.into_font().ok_or(FontLoadError::CouldntReadAsFont(full_path.clone()))?; // this is an option
@@ -78,7 +78,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription, image
 	let scale = Scale { x: font_description.point_size as f32, y: font_description.point_size as f32 };
     let pixel_height = scale.y.ceil() as i32;
 
-    println!("pixel height {:?}", pixel_height);
+    // println!("pixel height {:?}", pixel_height);
 
     let v_metrics = font.v_metrics(scale);
     
@@ -86,7 +86,7 @@ pub fn build_font(resource_path: &str, font_description: &FontDescription, image
 
     let line_height = v_metrics.ascent - v_metrics.descent + v_metrics.line_gap;
 
-    println!("line height -> {:?}", line_height);
+    // println!("line height -> {:?}", line_height);
 
     let char_range : Range<u8> = (32)..(127); // from space to tilde
     let chars : Vec<char> = char_range.map(|n| n as char).collect();
