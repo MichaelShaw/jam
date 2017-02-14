@@ -27,7 +27,7 @@ impl <BufferKey> fmt::Debug for Command<BufferKey> where BufferKey : Debug {
         use self::Command::*;
         match self {
             &Delete { ref key } => write!(f, "Delete {{ key: {:?} }}", key),
-            &DeleteMatching { ref pred } => write!(f, "DeleteMatching {{ pred: <function> }}"),
+            &DeleteMatching { .. } => write!(f, "DeleteMatching {{ pred: <function> }}"),
             &Update { ref key, ref vertices} => write!(f, "Update {{ key: {:?} vertices: {:?} }}", key, vertices.len()),
             &Draw { ref key, ref uniforms } => write!(f, "Draw {{ key: {:?} uniforms: {:?} }}", key, uniforms),
             &DrawNew { ref key, ref vertices, ref uniforms } => write!(f, "DrawNew {{ key: {:?} vertices: {:?} uniforms: {:?} }}", key, vertices.len(), uniforms),

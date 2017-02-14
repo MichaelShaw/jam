@@ -149,6 +149,10 @@ impl App {
             Err(e) => println!("font load error -> {:?}", e),
             Ok(_) => (),
         }
+
+        if let Some(font) = self.renderer.get_font(&font_description) {
+            println!("ok we got a font to use to draw");
+        }
         // let font = self.renderer.load_font(&font_description);
 
         // println!("render with delta -> {:?}", delta_time);

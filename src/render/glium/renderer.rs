@@ -113,6 +113,10 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         }
     }
 
+    pub fn get_font(&self, font_description: &FontDescription) -> Option<&BitmapFont> {
+        self.fonts.iter().find(|loaded_font| &loaded_font.font.description == font_description).map(|loaded_font| &loaded_font.font)
+    }
+
     pub fn clear_fonts(&mut self) {
         if !self.fonts.is_empty() {
             self.fonts.clear();
@@ -130,8 +134,13 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         
         if reload_texture || self.texture.is_none() {
             println!("reload texture");
-            let texture_load_result = self.texture_directory.load().and_then(|texture_data| {
-                let dimensions = texture_data.dimensions;
+            let texture_load_result = self.texture_directory.load().and_then(|mut texture_data| {
+                for loaded_font in &self.fonts {
+                    println!("copying in font -> {:?} to texture array",loaded_font.font.description);
+                    texture_data.data.push(loaded_font.image.clone().into_raw());
+                }
+                let mut dimensions = texture_data.dimensions;
+                dimensions.layers += self.fonts.len() as u32;
                 texture_data.load(&self.display).map(|t| (t, dimensions))
             });
             println!("texture load result -> {:?}", texture_load_result);
