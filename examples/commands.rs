@@ -150,8 +150,8 @@ impl App {
             Ok(_) => (),
         }
 
-        if let Some(font) = self.renderer.get_font(&font_description) {
-            println!("ok we got a font to use to draw");
+        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
+            println!("ok we got a font to use to draw layer -> {:?}", layer);
         }
         // let font = self.renderer.load_font(&font_description);
 

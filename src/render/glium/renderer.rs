@@ -94,7 +94,7 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
 
         if found_font {
             Ok(())
-        } else if let Some((_, dimensions)) = self.texture {
+        } else if let Some(dimensions) = self.texture_array_dimensions() {
             let mut full_path = self.font_directory.path.clone();
             full_path.push(font_description.family.clone());
             full_path.set_extension("ttf");
@@ -113,8 +113,22 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         }
     }
 
-    pub fn get_font(&self, font_description: &FontDescription) -> Option<&BitmapFont> {
-        self.fonts.iter().find(|loaded_font| &loaded_font.font.description == font_description).map(|loaded_font| &loaded_font.font)
+    pub fn get_font(&self, font_description: &FontDescription) -> Option<(&BitmapFont, u32)> {
+        if let Some(dimensions) = self.texture_array_dimensions() {
+            if let Some(font_position) = self.fonts.iter().position(|loaded_font| &loaded_font.font.description == font_description) {
+                let font_count = self.fonts.len();
+                let layer = dimensions.layers as usize - font_count + font_position;
+                Some((&self.fonts[font_position].font, layer as u32))
+            } else {
+                None
+            }
+        } else {
+            None
+        }
+    }
+
+    pub fn texture_array_dimensions(&self) -> Option<TextureArrayDimensions> {
+       self.texture.as_ref().map(|&(_, d)| d )
     }
 
     pub fn clear_fonts(&mut self) {
