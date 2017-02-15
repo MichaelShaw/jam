@@ -29,5 +29,5 @@ fn main() {
     println!("font gylphs -> {:?}", loaded_font.font.glyphs);
     println!("font kerning -> {:?}", loaded_font.font.kerning);
 
-    loaded_font.image.save("DejaBuSerif.png").unwrap();
+    loaded_font.image.save("DejaVuSerif.png").unwrap();
 }

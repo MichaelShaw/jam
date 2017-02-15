@@ -145,7 +145,7 @@ impl App {
 
     fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 32 };
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 64 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),
@@ -235,7 +235,7 @@ impl App {
 
             let at = Vec2::new(0.0, 0.0);
 
-            text::render("Quiet lazy dog", font, layer, at, &mut t);
+            text::render("T-Bone Milk from a C.O.W.", font, layer, at, &mut t);
 
             translucent_commands.push(DrawNew {
                 key: None, 
