@@ -96,7 +96,7 @@ impl GeometryTesselator {
     }
 
     // anchor is near x/z coord
-    pub fn draw_wall_tile(&mut self, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_wall_tile(&mut self, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64, flip:bool) {
         let layer_f = layer as f32;
         let ww = (tr.width() as f64) * self.scale.x;
         let hw = (tr.height() as f64) * self.scale.z;
@@ -105,10 +105,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [ax as f32,        (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust) as f32,      (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [(ax + ww) as f32, (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
-            Vertex { position: [ax as f32,        (y + depth_adjust + hw) as f32, (az + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS }
+            Vertex { position: [ax as f32,        (ay + depth_adjust) as f32,      (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + ww) as f32, (ay + depth_adjust) as f32,      (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [(ax + ww) as f32, (ay + depth_adjust + hw) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
+            Vertex { position: [ax as f32,        (ay + depth_adjust + hw) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS }
         ]);
     }
 

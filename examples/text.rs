@@ -13,7 +13,7 @@ use std::path::Path;
 fn main() {
 	let font_description = FontDescription {
 		family: "DejaVuSerif".into(),
-		pixel_size: 48,
+		pixel_size: 32,
 	};
 
 	let start_time = time::precise_time_ns();

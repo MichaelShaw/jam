@@ -1,4 +1,3 @@
-
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Dimensions {
     pub pixels: (u32,u32),

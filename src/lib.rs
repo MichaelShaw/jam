@@ -21,6 +21,7 @@ pub mod geometry;
 pub mod spring;
 pub mod color;
 pub mod font;
+pub mod dimensions;
 
 use fnv::FnvHasher;
 use std::collections::{HashMap as StdHashMap, HashSet as StdHashSet};

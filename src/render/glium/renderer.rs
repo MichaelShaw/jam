@@ -25,7 +25,7 @@ use super::program;
 use render::command::*;
 use render::command::Command::*;
 
-use render::dimension::Dimensions;
+use dimensions::Dimensions;
 use render::vertex::Vertex;
 
 use font::*;
@@ -166,13 +166,20 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
 
         let new_dimensions = dimensions_for(&self.display);
 
-        if new_dimensions != self.last_dimensions && Dimensions::approx_equal_point_size(new_dimensions, self.last_dimensions) { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
-            if let Some(window) = self.display.get_window() {
-                if let Some((w, h)) = window.get_inner_size_points() {
-                    window.set_inner_size(w+1, h);
-                    window.set_inner_size(w, h);
-                }
-            }    
+        if new_dimensions != self.last_dimensions { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
+            println!("resize detected from {:?} to {:?}", self.last_dimensions, new_dimensions);
+            if Dimensions::approx_equal_point_size(new_dimensions, self.last_dimensions)  {
+                println!("missed resize case detected");
+                if let Some(window) = self.display.get_window() {
+                    if let Some((w, h)) = window.get_inner_size_points() {
+                        println!("jiggling a little");
+                        window.set_inner_size(w+1, h);
+                        window.set_inner_size(w, h);
+                    }
+                }    
+            }
+           
+            
             
             self.last_dimensions = new_dimensions;
         }

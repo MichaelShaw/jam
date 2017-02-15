@@ -7,7 +7,7 @@ pub mod vertex;
 pub mod texture_array;
 pub mod texture_region;
 pub mod glium;
-pub mod dimension;
+pub mod text;
 
 pub use self::texture_region::TextureRegion;
 pub use self::quads::GeometryTesselator;

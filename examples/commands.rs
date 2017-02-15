@@ -4,46 +4,51 @@ extern crate jam;
 extern crate cgmath;
 extern crate time;
 
-use jam::render::ShaderPair;
-use jam::render::TextureDirectory;
+use std::f64::consts::PI;
+
 use jam::font::FontDirectory;
 use jam::input::InputState;
 use jam::camera::Camera;
 use jam::color;
 use jam::color::Color;
 
-use jam::render::GeometryTesselator;
-use jam::render::TextureRegion;
-use jam::Vec3;
-use std::f64::consts::PI;
+use jam::{Vec3, Vec2};
+
+use jam::dimensions::Dimensions;
 
 use jam::render::command::*;
 use jam::render::command::Command::*;
 use jam::render::command::Blend;
 use jam::render::{Seconds};
-use jam::render::dimension::Dimensions;
+use jam::render::ShaderPair;
+use jam::render::TextureDirectory;
+use jam::render::text;
+use jam::render::GeometryTesselator;
+use jam::render::TextureRegion;
 use jam::render::glium::renderer;
 use jam::render::down_size_m4;
 use jam::render::glium::renderer::Renderer;
 
 use cgmath::Rad;
 
-
-
-
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures");
     let font_dir = FontDirectory::for_path("resources/fonts");
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (600, 600)).expect("a renderer");
+    let starting_dimensions = Dimensions { 
+        pixels: (800,600),
+        scale: 1.0,
+    };
+
+    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, starting_dimensions.pixels).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
             at: Vec3::new(0.0, 0.0, 0.0),
             pitch: Rad(PI / 4.0_f64),
-            viewport: (800, 600),
+            viewport: starting_dimensions,
             pixels_per_unit: 16.0 * 1.0,
         },
         zoom: 1.0,
@@ -135,32 +140,28 @@ impl App {
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
         self.camera.pixels_per_unit = self.pixels_per_unit * self.zoom;
-
-        let (width_points, height_points) = dimensions.points();
-
-        self.camera.viewport = (width_points as u32, height_points as u32);
+        self.camera.viewport = dimensions;
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 16 };
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 32 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),
             Ok(_) => (),
         }
 
-        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
-            println!("ok we got a font to use to draw layer -> {:?}", layer);
-        }
+        let mut opaque_commands : Vec<Command<String>> = Vec::new();
+        let mut translucent_commands : Vec<Command<String>> = Vec::new();
+        let mut additive_commands : Vec<Command<String>> = Vec::new();
+
         // let font = self.renderer.load_font(&font_description);
 
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
-        let mut opaque_commands : Vec<Command<String>> = Vec::new();
-        let mut translucent_commands : Vec<Command<String>> = Vec::new();
-        let mut additive_commands : Vec<Command<String>> = Vec::new();
+        
         
         let an = self.n / 60;
 
@@ -224,6 +225,26 @@ impl App {
                     _ => opaque_commands.push(command),
                 };
             }
+        }
+
+
+        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
+            // println!("ok we got a font to use to draw layer -> {:?}", layer);
+            let scale = 1.0 / self.camera.viewport.scale as f64;
+            let mut t = GeometryTesselator::new(Vec3::new(scale, scale, scale));
+
+            let at = Vec2::new(0.0, 0.0);
+
+            text::render("Quiet lazy dog", font, layer, at, &mut t);
+
+            translucent_commands.push(DrawNew {
+                key: None, 
+                vertices: t.tesselator.vertices, 
+                uniforms: Uniforms {
+                    transform : down_size_m4(self.camera.ui_projection().into()),
+                    color: color::BLACK,
+                }
+            });
         }
 
 
