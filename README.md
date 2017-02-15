@@ -10,7 +10,6 @@ cargo run --example commands
 cargon run --example text
 
 # Todo
-- Add text rendering.
 - UI rendering pass ... just clear depth before?
 - Fix up our coordinate systems to be consistent ... texture UV+ with geometry xyz+ if possible for most obvious case ...
 - Only load PNGs in the texture directory (ignore .DS_Store etc.)

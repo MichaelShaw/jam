@@ -235,7 +235,7 @@ impl App {
 
             let at = Vec2::new(0.0, 0.0);
 
-            text::render("T-Bone Milk from a C.O.W.", font, layer, at, &mut t);
+            text::render_text("Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.", font, layer, at, &mut t, Some(300.0));
 
             translucent_commands.push(DrawNew {
                 key: None, 
