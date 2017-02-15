@@ -61,8 +61,8 @@ pub fn view(pitch: Rad<f64>, at: Vec3) -> Mat4 {
 }
 
 pub fn ui_projection(width: f64, height: f64) -> Mat4 {
-    cgmath::ortho(0.0, width, height, 0.0, 0.0, 100.0) // this is the opposite I think
-    // near is 0.0, far is 100.0 .. depth walks away
+    // left, right, bottom, top, near, far
+    cgmath::ortho(0.0, width, height, 0.0, 0.0, 100.0) 
 }
 
 pub fn projection(width:f32, height:f32, pixels_per_unit: f64) -> Mat4 {
@@ -70,6 +70,7 @@ pub fn projection(width:f32, height:f32, pixels_per_unit: f64) -> Mat4 {
     let effective_height = (height as f64) / (pixels_per_unit) / (2.0_f64).sqrt(); // adjust for 45 degree downward viewing angle
     let half_width = effective_width / 2.0;
     let half_height = effective_height / 2.0;
+
 
     cgmath::ortho(-half_width, half_width, -half_height, half_height, -100.0, 100.0)
 }

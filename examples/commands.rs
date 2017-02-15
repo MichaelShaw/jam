@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-
+#[macro_use]
 extern crate jam;
 extern crate cgmath;
 extern crate time;
@@ -11,6 +11,8 @@ use jam::input::InputState;
 use jam::camera::Camera;
 use jam::color;
 use jam::color::Color;
+
+use jam::HashSet;
 
 use jam::{Vec3, Vec2};
 
@@ -33,7 +35,7 @@ use cgmath::Rad;
 
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
-    let texture_dir = TextureDirectory::for_path("resources/textures");
+    let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
     let starting_dimensions = Dimensions { 
@@ -231,11 +233,20 @@ impl App {
         if let Some((font, layer)) = self.renderer.get_font(&font_description) {
             // println!("ok we got a font to use to draw layer -> {:?}", layer);
             let scale = 1.0 / self.camera.viewport.scale as f64;
-            let mut t = GeometryTesselator::new(Vec3::new(scale, scale, scale));
+            let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
 
             let at = Vec2::new(0.0, 0.0);
 
-            text::render_text("Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.", font, layer, at, &mut t, Some(300.0));
+            text::render_text(
+                "Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.", 
+                font, 
+                layer,
+                at,
+                -1.0, // i assume this is because our coordinate system is hosed ... 
+                scale,
+                &mut t, 
+                Some(300.0)
+            );
 
             translucent_commands.push(DrawNew {
                 key: None, 

@@ -5,23 +5,72 @@ use image;
 use image::GenericImage;
 use std::fmt;
 
+use HashSet;
+
 use JamResult;
 use JamError;
 
 #[derive(Debug)]
 pub struct TextureDirectory {
     pub path: PathBuf, 
+    pub extensions: HashSet<String>,
 }
 
 impl TextureDirectory {
-    pub fn for_path(path:&str) -> TextureDirectory {
+    pub fn for_path(path:&str, extensions: HashSet<String>) -> TextureDirectory {
         TextureDirectory {
-            path: PathBuf::from(path) // convert to absolute here?
+            path: PathBuf::from(path), // convert to absolute here?
+            extensions: extensions,
         }
     }
 
     pub fn load(&self) -> JamResult<TextureArrayData> {
-        load_directory(&self.path)
+        let mut file_data : Vec<Vec<u8>> = Vec::new();
+
+        let mut dimensions : Option<Dimensions> = None;
+
+        let mut paths = try!(read_directory_paths(&self.path));
+        paths.sort();
+
+        println!("sorted paths -> {:?}", paths);
+
+        for path in paths {
+            if let Some(extension) = path.extension().and_then(|p| p.to_str()) {
+                // let ext : String = extension.into();
+                if self.extensions.contains(extension) {
+                    let img = try!(image::open(path.clone()));
+
+                    let d = img.dimensions();
+                    let w = d.0 as u32;
+                    let h = d.1 as u32;
+
+                    if let Some(ed) = dimensions {
+                        if ed != (w, h) {
+                            return Err(JamError::MismatchingDimensions);
+                        }
+                    } else {
+                        dimensions = Some((w, h));
+                    }
+                    
+                    let image_buffer = img.to_rgba().into_raw();
+                    
+                    file_data.push(image_buffer);
+                }
+            }
+        }
+
+        if let Some((w, h))  = dimensions {
+            Ok(TextureArrayData {
+                dimensions: TextureArrayDimensions { 
+                    width: w,
+                    height: h,
+                    layers: file_data.len() as u32,
+                },
+                data: file_data,
+            })
+        } else {
+            Err(JamError::NoFiles)
+        }    
     }
 
     pub fn contains(&self, path:&Path) -> bool {
@@ -45,50 +94,6 @@ pub fn read_directory_paths(path:&Path) -> JamResult<Vec<PathBuf>> {
     }
 
     Ok(paths)
-}
-
-pub fn load_directory(path:&Path) -> JamResult<TextureArrayData> {
-    let mut file_data : Vec<Vec<u8>> = Vec::new();
-
-    let mut dimensions : Option<Dimensions> = None;
-
-    let mut paths = try!(read_directory_paths(path));
-    paths.sort();
-
-    println!("sorted paths -> {:?}", paths);
-
-    for path in paths {
-        let img = try!(image::open(path));
-
-        let d = img.dimensions();
-        let w = d.0 as u32;
-        let h = d.1 as u32;
-
-        if let Some(ed) = dimensions {
-            if ed != (w, h) {
-                return Err(JamError::MismatchingDimensions);
-            }
-        } else {
-            dimensions = Some((w, h));
-        }
-        
-        let image_buffer = img.to_rgba().into_raw();
-        
-        file_data.push(image_buffer);
-    }
-
-    if let Some((w, h))  = dimensions {
-        Ok(TextureArrayData {
-            dimensions: TextureArrayDimensions { 
-                width: w,
-                height: h,
-                layers: file_data.len() as u32,
-            },
-            data: file_data,
-        })
-    } else {
-        Err(JamError::NoFiles)
-    }    
 }
 
 type Dimensions = (u32, u32); // rename this as TextureDimensions?

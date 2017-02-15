@@ -72,10 +72,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [x as f32,        (y) as f32,      z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(x + ww) as f32, (y) as f32,      z as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(x + ww) as f32, (y + hw) as f32, z as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [x as f32,        (y + hw) as f32, z as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+            Vertex { position: [x as f32,        (y) as f32,      z as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(x + ww) as f32, (y) as f32,      z as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(x + ww) as f32, (y + hw) as f32, z as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [x as f32,        (y + hw) as f32, z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS }
         ]);
     }
 
@@ -88,10 +88,10 @@ impl GeometryTesselator {
         let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
 
         self.tesselator.add_quad([
-            Vertex { position: [(x - hww) as f32, (y - hhw) as f32, z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(x + hww) as f32, (y - hhw) as f32, z as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(x + hww) as f32, (y + hhw) as f32, z as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
-            Vertex { position: [(x - hww) as f32, (y + hhw) as f32, z as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+            Vertex { position: [(x - hww) as f32, (y - hhw) as f32, z as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(x + hww) as f32, (y - hhw) as f32, z as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(x + hww) as f32, (y + hhw) as f32, z as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(x - hww) as f32, (y + hhw) as f32, z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS }
         ]);
     }
 
