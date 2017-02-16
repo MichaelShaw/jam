@@ -20,7 +20,7 @@ impl TextureDirectory {
     pub fn for_path(path:&str, extensions: HashSet<String>) -> TextureDirectory {
         TextureDirectory {
             path: PathBuf::from(path), // convert to absolute here?
-            extensions: extensions,
+            extensions: extensions.iter().map(|s| s.to_lowercase()).collect(),
         }
     }
 
@@ -35,9 +35,10 @@ impl TextureDirectory {
         println!("sorted paths -> {:?}", paths);
 
         for path in paths {
-            if let Some(extension) = path.extension().and_then(|p| p.to_str()) {
+            if let Some(extension) = path.extension().and_then(|p| p.to_str()).map(|s|s.to_lowercase()) {
                 // let ext : String = extension.into();
-                if self.extensions.contains(extension) {
+                if self.extensions.contains(&extension) {
+                    println!("path -> {:?} with extension -> {:?}", path, extension);
                     let img = try!(image::open(path.clone()));
 
                     let d = img.dimensions();

@@ -38,11 +38,12 @@ impl <BufferKey> fmt::Debug for Command<BufferKey> where BufferKey : Debug {
 pub struct Pass<BufferKey> {
     pub blend: Blend,
     pub commands: Vec<Command<BufferKey>>,
+    pub clear_depth: bool,
 }
 
 impl <BufferKey> fmt::Debug for Pass<BufferKey> where BufferKey : Debug {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "Pass {{ blend: {:?} commands: {:?} }}", self.blend, self.commands.len())
+        write!(f, "Pass {{ blend: {:?} commands: {:?} clear_depth: {:?} }}", self.blend, self.commands.len(), self.clear_depth)
     }
 }
 

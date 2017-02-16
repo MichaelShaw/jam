@@ -159,6 +159,7 @@ impl App {
         let mut opaque_commands : Vec<Command<String>> = Vec::new();
         let mut translucent_commands : Vec<Command<String>> = Vec::new();
         let mut additive_commands : Vec<Command<String>> = Vec::new();
+        let mut ui_commands : Vec<Command<String>> = Vec::new();
 
         // let font = self.renderer.load_font(&font_description);
 
@@ -240,10 +241,7 @@ impl App {
             let scale = 1.0 / self.camera.viewport.scale as f64;
             let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
 
-            
-
-
-             let texture_region = TextureRegion {
+            let texture_region = TextureRegion {
                 u_min: 0,
                 u_max: 128,
                 v_min: 0,
@@ -266,7 +264,7 @@ impl App {
                 Some(300.0)
             );
 
-            translucent_commands.push(DrawNew {
+            ui_commands.push(DrawNew {
                 key: None, 
                 vertices: t.tesselator.vertices, 
                 uniforms: Uniforms {
@@ -276,16 +274,22 @@ impl App {
             });
         }
 
-
         vec![Pass {
             blend: Blend::None,
             commands: opaque_commands,
+            clear_depth: false,
         }, Pass {
             blend: Blend::Alpha,
             commands: translucent_commands,
+            clear_depth: false,
         }, Pass {
             blend: Blend::Add,
             commands: additive_commands,
+            clear_depth: false,
+        }, Pass {
+            blend: Blend::Alpha,
+            commands: ui_commands,
+            clear_depth: true,
         }]
     }
 }

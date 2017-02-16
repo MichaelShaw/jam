@@ -197,6 +197,9 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
 
             for pass in passes {
                 let blend = program::draw_params_for_blend(pass.blend);
+                if pass.clear_depth {
+                    target.clear_depth(1.0);
+                }
 
                 for command in pass.commands {
                     // println!("received command -> {:?}", command);

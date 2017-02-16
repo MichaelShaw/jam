@@ -10,10 +10,6 @@ cargo run --example commands
 cargon run --example text
 
 # Todo
-
-- Fix up our coordinate systems to be consistent ... texture UV+ with geometry xyz+ if possible for most obvious case. We can do this, Z becomes "up", and XY are our two main axes
-- Case insensitive extension matching for texture arrays.
-- UI rendering pass ... just clear depth before?
 - Better point/pixel handling for tesselators/camera
 - Before generating a font, check we have space, return a nice error message. e.g. the next power of 2 texture that has sufficient size to store the bitmap font texture (Nicer error message)
 - Include convenience App<State> type, with string VBO keys
