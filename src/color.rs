@@ -13,7 +13,7 @@ pub const YELLOW: Color = Color { r:255, g:255, b:0, a:255 };
 pub const BLUE: Color = Color { r:0, g:0, b:255, a:255 };
 pub const WHITE: Color = Color { r:255, g:255, b:255, a:255 };
 pub const BLACK: Color = Color { r:0, g:0, b:0, a:255 };
-
+pub const PINK: Color = Color { r:255, g:105, b:180, a:255 };
 pub type ColorRaw = [u8; 4];
 pub type ColorFloatRaw = [f32; 4];
 

@@ -50,7 +50,7 @@ pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f
                 if at.x + space_advance + word_width > top_left.x + width {
                     // new line
                     at.x = top_left.x;
-                    at.y += per_line;
+                    at.y -= per_line;
                 }
             } 
 
@@ -64,15 +64,16 @@ pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f
         }
 
         at.x = top_left.x;
-        at.y += per_line;
+        at.y -= per_line;
     }
 
 
     if at.x > top_left.x {
-        at.y += per_line;
+        at.y -= per_line;
     }
     
-    Vec2::new(at.y, max_x)
+    // unsure what we should be returning here to be honest ... extents I guess?
+    Vec2::new(top_left.y + at.y, max_x)
 }
 
 pub fn measure(text: &str, font: &BitmapFont, scale: f64, max_width: Option<f64>) -> Vec2 {
@@ -91,7 +92,7 @@ pub fn measure(text: &str, font: &BitmapFont, scale: f64, max_width: Option<f64>
                 if at.x + space_advance + word_width > width {
                     // new line
                     at.x = 0.0;
-                    at.y += per_line;
+                    at.y -= per_line;
                 }
             } 
 
@@ -102,15 +103,15 @@ pub fn measure(text: &str, font: &BitmapFont, scale: f64, max_width: Option<f64>
         }
 
         at.x = 0.0;
-        at.y += per_line;
+        at.y -= per_line;
     }
 
 
     if at.x > 0.0 {
-        at.y += per_line;
+        at.y -= per_line;
     }
     
-    Vec2::new(at.y, max_x)
+    Vec2::new(-at.y, max_x)
 }
 
 pub fn measure_width(text: &str, font: &BitmapFont, scale: f64) -> f64 {

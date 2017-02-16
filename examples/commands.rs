@@ -120,20 +120,20 @@ impl App {
         };
         
         let mut t = self.tesselator();
-        t.color = color.float_raw();
-        t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
-        t.color = color::RED.float_raw();
-        t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
-        t.color = color::GREEN.float_raw();
-        t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
-        t.color = color::YELLOW.float_raw();
+        // t.color = color.float_raw();
+        // t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
+        // t.color = color::RED.float_raw();
+        // t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
+        // t.color = color::GREEN.float_raw();
+        // t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+        // t.color = color::YELLOW.float_raw();
 
-        t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, PI / 4.0, 0.1);
+        // t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
 
-        t.color = color::RED.float_raw();
-        t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
-        t.color = color::YELLOW.float_raw();
-        t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
+        // t.color = color::RED.float_raw();
+        // t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+        // t.color = color::YELLOW.float_raw();
+        // t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
         t
     }
 
@@ -141,13 +141,15 @@ impl App {
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
+        // self.camera.at = Vec3::new(8.0, 0.0, 8.0);
         self.camera.pixels_per_unit = self.pixels_per_unit * self.zoom;
         self.camera.viewport = dimensions;
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: 64 };
+        
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32 as f32 * self.camera.viewport.scale) as u32 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),
@@ -163,7 +165,10 @@ impl App {
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
-        
+        // let (w, h) = self.camera.viewport.pixels;
+        // let line = self.camera.ray_for_mouse_position((w / 2) as i32, (h / 2) as i32);
+        // println!("forward line -> {:?}", line);
+
         
         let an = self.n / 60;
 
@@ -235,8 +240,21 @@ impl App {
             let scale = 1.0 / self.camera.viewport.scale as f64;
             let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
 
-            let at = Vec2::new(0.0, 0.0);
+            
 
+
+             let texture_region = TextureRegion {
+                u_min: 0,
+                u_max: 128,
+                v_min: 0,
+                v_max: 128,
+                texture_size: 1024,
+            };
+            t.color = color::WHITE.float_raw();
+            t.draw_ui(&texture_region, 0, 20.0, 20.0, 0.0, false, 1.0);
+
+            let at = Vec2::new(0.0, 400.0);
+            t.color = color::BLACK.float_raw();
             text::render_text(
                 "Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.", 
                 font, 
@@ -253,7 +271,7 @@ impl App {
                 vertices: t.tesselator.vertices, 
                 uniforms: Uniforms {
                     transform : down_size_m4(self.camera.ui_projection().into()),
-                    color: color::BLACK,
+                    color: color::WHITE,
                 }
             });
         }

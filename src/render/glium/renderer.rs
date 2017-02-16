@@ -179,8 +179,6 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
                 }    
             }
            
-            
-            
             self.last_dimensions = new_dimensions;
         }
 

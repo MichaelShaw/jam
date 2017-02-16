@@ -23,6 +23,7 @@ pub fn translucent_draw_params<'a>() -> glium::DrawParameters<'a> {
             .. Default::default()
         },
         blend: glium::Blend::alpha_blending(),
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     }
 }
@@ -46,6 +47,7 @@ pub fn additive_draw_params<'a>() -> glium::DrawParameters<'a> {
             },
             constant_value: (0.0, 0.0, 0.0, 0.0)
         },
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     }
 }
@@ -57,6 +59,7 @@ pub fn opaque_draw_params<'a>() -> glium::DrawParameters<'a> {
             write: true,
             .. Default::default()
         },
+        backface_culling: glium::draw_parameters::BackfaceCullingMode::CullClockwise,
         .. Default::default()
     }
 }
