@@ -120,20 +120,20 @@ impl App {
         };
         
         let mut t = self.tesselator();
-        // t.color = color.float_raw();
-        // t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
-        // t.color = color::RED.float_raw();
-        // t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
-        // t.color = color::GREEN.float_raw();
-        // t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
-        // t.color = color::YELLOW.float_raw();
+        t.color = color.float_raw();
+        t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
+        t.color = color::RED.float_raw();
+        t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
+        t.color = color::GREEN.float_raw();
+        t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+        t.color = color::YELLOW.float_raw();
 
-        // t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
+        t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
 
-        // t.color = color::RED.float_raw();
-        // t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
-        // t.color = color::YELLOW.float_raw();
-        // t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
+        t.color = color::RED.float_raw();
+        t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+        t.color = color::YELLOW.float_raw();
+        t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
         t
     }
 
