@@ -12,7 +12,7 @@ use render::texture_array::{TextureDirectory, TextureArrayDimensions};
 use input;
 use HashMap;
 use input::InputState;
-use color::{rgb};
+use color::Color;
 
 
 
@@ -33,6 +33,8 @@ use font::*;
 use {JamResult, JamError};
 
 use std::hash::Hash;
+
+use image;
 
 pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
     pub shader_pair : ShaderPair,
@@ -137,6 +139,13 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         }
     }
 
+    pub fn screenshot(&mut self) -> image::DynamicImage {
+        let image: glium::texture::RawImage2d<u8> = self.display.read_front_buffer();
+        let image = image::ImageBuffer::from_raw(image.width, image.height, image.data.into_owned()).unwrap();
+        let image = image::DynamicImage::ImageRgba8(image).flipv();
+        image
+    }
+
     pub fn begin(&mut self) -> (Dimensions, InputState) {
         let (reload_program, reload_texture) = check_reload(&self.resource_file_change_events, &self.shader_pair, &self.texture_directory);
 
@@ -185,13 +194,11 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render(&mut self, passes: Vec<Pass<BufferKey>>) -> JamResult<()> {
+    pub fn render(&mut self, passes: Vec<Pass<BufferKey>>, clear_color: Color) -> JamResult<()> {
         if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
             let mut target = self.display.draw();
 
-            let sky_blue = rgb(132, 193, 255);
-
-            target.clear_color_and_depth(sky_blue.float_tup(), 1.0);
+            target.clear_color_and_depth(clear_color.float_tup(), 1.0);
 
             let tex = tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
 

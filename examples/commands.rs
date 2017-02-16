@@ -3,14 +3,17 @@
 extern crate jam;
 extern crate cgmath;
 extern crate time;
+extern crate glutin;
+extern crate image;
 
 use std::f64::consts::PI;
+use std::path::Path;
 
 use jam::font::FontDirectory;
 use jam::input::InputState;
 use jam::camera::Camera;
 use jam::color;
-use jam::color::Color;
+use jam::color::{Color, rgb};
 
 use jam::HashSet;
 
@@ -83,7 +86,7 @@ impl App {
 
             let render_passes = self.render();
 
-            self.renderer.render(render_passes);
+            self.renderer.render(render_passes, rgb(132, 193, 255));
 
             last_time = time;
             if input_state.close {
@@ -138,12 +141,20 @@ impl App {
     }
 
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
+        use glutin::VirtualKeyCode;
         self.n += 1;
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
         // self.camera.at = Vec3::new(8.0, 0.0, 8.0);
         self.camera.pixels_per_unit = self.pixels_per_unit * self.zoom;
         self.camera.viewport = dimensions;
+
+        if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
+            println!("take a screenshot!");
+            let image = self.renderer.screenshot();
+            let mut output = std::fs::File::create(&Path::new("screenshot.png")).unwrap();
+            image.save(&mut output, image::ImageFormat::PNG).unwrap();
+        }
     }
 
     fn render(&mut self) -> Vec<Pass<String>> {
