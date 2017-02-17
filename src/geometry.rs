@@ -11,14 +11,14 @@ pub struct Box {
 
 
 #[derive(PartialEq, Debug, Copy, Clone)]
-pub struct Line {
+pub struct LineSegment {
     pub from: Vec3,
     pub to: Vec3,
 }
 
 const EPSILON: f64 = 0.0000001;
 
-impl Line {
+impl LineSegment {
     pub fn intersects(&self, plane:Plane) -> Option<Vec3> {
         let direction = (self.to - self.from).normalize();
         let denominator = dot(plane.normal, direction);

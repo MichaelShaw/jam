@@ -13,21 +13,27 @@ use std::path::Path;
 fn main() {
 	let font_description = FontDescription {
 		family: "DejaVuSerif".into(),
-		pixel_size: 32,
+		pixel_size: 128,
 	};
 
 	let start_time = time::precise_time_ns();
 	
-    let loaded_font = build_font(Path::new("./resources/fonts/DejaVuSerif.ttf"), &font_description, 512).unwrap();
+    let font_result = build_font(Path::new("./resources/fonts/DejaVuSerif.ttf"), &font_description, 1024);
+
 
     let duration = time::precise_time_ns() - start_time; 
 
     let seconds = (duration as f64) / 1_000_000_000.0;
     println!("completed in {:} seconds", seconds);
 
-	println!("font description -> {:?}", loaded_font.font.description);
-    println!("font gylphs -> {:?}", loaded_font.font.glyphs);
-    println!("font kerning -> {:?}", loaded_font.font.kerning);
+    match font_result {
+    	Ok(loaded_font) => {
+			println!("font description -> {:?}", loaded_font.font.description);
+    		// println!("font gylphs -> {:?}", loaded_font.font.glyphs);
+    		// println!("font kerning -> {:?}", loaded_font.font.kerning);
 
-    loaded_font.image.save("DejaVuSerif.png").unwrap();
+	    	loaded_font.image.save("DejaVuSerif.png").unwrap();
+    	},
+    	Err(err) => println!("couldnt load font :-( {:?}", err),
+    }
 }
