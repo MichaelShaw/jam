@@ -54,7 +54,7 @@ pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
 fn dimensions_for(display : &glium::Display) -> Dimensions {
     let (width_pixels, height_pixels) = display.get_framebuffer_dimensions();
 
-    let scale : f32 = display.get_window().map(|w| w.hidpi_factor()).unwrap_or(1.0);
+    let scale : f64 = display.get_window().map(|w| w.hidpi_factor() as f64).unwrap_or(1.0);
 
     Dimensions {
         pixels: (width_pixels, height_pixels),

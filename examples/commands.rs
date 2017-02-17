@@ -41,23 +41,21 @@ fn main() {
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
-    let starting_dimensions = Dimensions { 
-        pixels: (800,600),
-        scale: 1.0,
-    };
-
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, starting_dimensions.pixels).expect("a renderer");
+    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600)).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
             at: Vec3::new(0.0, 0.0, 0.0),
             pitch: Rad(PI / 4.0_f64),
-            viewport: starting_dimensions,
-            pixels_per_unit: 16.0 * 1.0,
+            viewport: Dimensions { 
+                pixels: (800,600),
+                scale: 1.0,
+            },
+            points_per_unit: 16.0 * 1.0,
         },
         zoom: 1.0,
-        pixels_per_unit: 16.0,
+        points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
     };
@@ -68,7 +66,7 @@ struct App {
     name : String,
     camera : Camera,
     zoom : f64,
-    pixels_per_unit : f64,
+    points_per_unit : f64,
     n : u64,
     renderer:Renderer<String>,
 }
@@ -95,12 +93,12 @@ impl App {
         }
     }
 
-    fn units_per_pixel(&self) -> f64 {
-        1.0 / self.pixels_per_unit
+    fn units_per_point(&self) -> f64 {
+        1.0 / self.points_per_unit
     }
 
     fn tesselator(&self) -> GeometryTesselator {
-        let upp = self.units_per_pixel();
+        let upp = self.units_per_point();
         let tesselator_scale = Vec3::new(upp, upp, upp);
         GeometryTesselator::new(tesselator_scale)
     }
@@ -146,8 +144,11 @@ impl App {
 
         self.camera.at = Vec3::new(17.0, 0.0, 17.0);
         // self.camera.at = Vec3::new(8.0, 0.0, 8.0);
-        self.camera.pixels_per_unit = self.pixels_per_unit * self.zoom;
+        self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
+
+        let (mx, my) = input_state.mouse.at;
+        let mouse_at = self.camera.ui_ray_for_mouse_position(mx, my);
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
             println!("take a screenshot!");
@@ -160,7 +161,7 @@ impl App {
     fn render(&mut self) -> Vec<Pass<String>> {
         use jam::font::FontDescription;
         
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32 as f32 * self.camera.viewport.scale) as u32 };
+        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),

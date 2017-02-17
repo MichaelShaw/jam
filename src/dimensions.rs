@@ -1,13 +1,13 @@
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct Dimensions {
     pub pixels: (u32,u32),
-    pub scale: f32,
+    pub scale: f64,
 }
 
 impl Dimensions {
-    pub fn points(&self) -> (f32, f32) {
+    pub fn points(&self) -> (f64, f64) {
     	let (width, height) = self.pixels;
-        (width as f32 / self.scale, height as f32 / self.scale)
+        (width as f64 / self.scale, height as f64 / self.scale)
     }
 
     pub fn approx_equal_point_size(lhs: Dimensions, rhs:Dimensions) -> bool {
