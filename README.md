@@ -10,13 +10,11 @@ cargo run --example commands
 cargon run --example text
 
 # Todo
-- Re-ified handling of texture array layers, font/texture enum that's smarter
-- Include convenience App<State> type, with string VBO keys. With sleeping game loop for 60fps?
-- Shorthand for building texture atlas/regions. Keep animation etc. in mind
+- Allow prevention of double work. Allowed to load texture descriptions + font descriptions before the initial load.
+- Include convenience App<State> type, with string VBO keys. With sleeping game loop for 60fps? Include time measurement?
 
 # Todo - Low Importance
-- Cleanup vertex naming/namespacing etc.
-- Put color on a diet, [u8; 4]? I like being able to brighten though .... :-/ hrm
+- Put color on a diet, [u8; 4]? I like being able to brighten though .... :-/ hrm. Floats being able to 1.5 stuff is useful.
 - Should translucents write to depth? Probably, it'd overwrite people just stamping over them? Hrm. Unsure.
 
 

@@ -146,7 +146,7 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         image
     }
 
-    pub fn begin(&mut self) -> (Dimensions, InputState) {
+    pub fn load_resources(&mut self) {
         let (reload_program, reload_texture) = check_reload(&self.resource_file_change_events, &self.shader_pair, &self.texture_directory);
 
         if reload_program || self.program.is_none() {
@@ -169,6 +169,10 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
             println!("texture load result -> {:?}", texture_load_result);
             self.texture = texture_load_result.ok();
         }
+    }
+
+    pub fn begin(&mut self) -> (Dimensions, InputState) {
+        self.load_resources();
 
         let events : Vec<glutin::Event> = self.display.poll_events().collect();
         self.input_state = input::produce(&self.input_state, &events);

@@ -173,16 +173,13 @@ impl App {
         let mut additive_commands : Vec<Command<String>> = Vec::new();
         let mut ui_commands : Vec<Command<String>> = Vec::new();
 
-        // let font = self.renderer.load_font(&font_description);
-
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
         
         // let (w, h) = self.camera.viewport.pixels;
         // let line = self.camera.ray_for_mouse_position((w / 2) as i32, (h / 2) as i32);
         // println!("forward line -> {:?}", line);
-
-        
+   
         let an = self.n / 60;
 
         let on_second = (self.n % 60) == 0;
