@@ -9,10 +9,11 @@ pub mod texture_region;
 pub mod glium;
 pub mod text;
 
-pub use self::texture_region::TextureRegion;
-pub use self::quads::GeometryTesselator;
-pub use self::shader::ShaderPair;
-pub use self::texture_array::TextureDirectory;
+pub use self::texture_region::*;
+pub use self::texture_array::*;
+pub use self::command::*;
+pub use self::quads::*;
+pub use self::shader::*;
 
 pub type Seconds = f64;
 

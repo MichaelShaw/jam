@@ -23,6 +23,15 @@ pub mod color;
 pub mod font;
 pub mod dimensions;
 
+pub use font::*;
+pub use camera::*;
+pub use color::*;
+pub use dimensions::*;
+pub use font::*;
+pub use geometry::*;
+pub use input::*;
+pub use spring::*;
+
 use fnv::FnvHasher;
 use std::collections::{HashMap as StdHashMap, HashSet as StdHashSet};
 use std::hash::BuildHasherDefault;
