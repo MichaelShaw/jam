@@ -46,6 +46,10 @@ impl GeometryTesselator {
         }
     }
 
+    pub fn draw_floor_tile_at(&mut self, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64, flip:bool) {
+        self.draw_floor_tile(tr, layer, v.x, v.y, v.z, depth_adjust, flip)
+    }
+
     // anchor is near x/z coord
     pub fn draw_floor_tile(&mut self, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64, flip:bool) {
         let layer_f = layer as f32;

@@ -148,7 +148,7 @@ impl App {
         self.camera.viewport = dimensions;
 
         let (mx, my) = input_state.mouse.at;
-        let mouse_at = self.camera.ui_ray_for_mouse_position(mx, my);
+        let mouse_at = self.camera.ui_line_segment_for_mouse_position(mx, my);
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
             println!("take a screenshot!");

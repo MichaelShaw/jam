@@ -1,6 +1,6 @@
 
 use glium::{Program, Surface};
-use glium::texture::{Texture2dArray};
+
 use glium::VertexBuffer;
 use glium::index;
 use glium;

@@ -48,14 +48,14 @@ impl Camera {
         self.view_projection().invert()
     }
 
-    pub fn world_ray_for_mouse_position(&self, x:i32, y:i32) -> Option<geometry::LineSegment> {
+    pub fn world_line_segment_for_mouse_position(&self, x:i32, y:i32) -> Option<geometry::LineSegment> {
         let (width, height) = self.viewport.pixels;
         self.inverse_view_projection().and_then(|ivp| {
             ray_for_mouse_position(ivp, width, height, x, y)
         })
     }
 
-    pub fn ui_ray_for_mouse_position(&self, x:i32, y:i32) -> Option<(f64, f64)> {
+    pub fn ui_line_segment_for_mouse_position(&self, x:i32, y:i32) -> Option<(f64, f64)> {
         let (pixels_wide, pixels_high) = self.viewport.pixels;
         if x > 0 && y > 0 && x < pixels_wide as i32 && y < pixels_high as i32 {
             let point_x = x as f64 / self.viewport.scale;
