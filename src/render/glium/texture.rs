@@ -17,6 +17,7 @@ impl TextureArrayData {
             texture::RawImage2d::from_raw_rgba_reversed(raw_image_data, (dimensions.width, dimensions.height))
         }).collect();
 
-		SrgbTexture2dArray::new(display, raw_images).map_err(JamError::TextureLoadError)
+		SrgbTexture2dArray::with_format(display, raw_images, glium::texture::SrgbFormat::U8U8U8U8, glium::texture::MipmapsOption::NoMipmap).map_err(JamError::TextureLoadError)
+
     }
 }
