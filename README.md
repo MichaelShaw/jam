@@ -10,6 +10,8 @@ cargo run --example commands
 cargon run --example text
 
 # Todo
+- Disable mipmapping .... somehow
+- Move API to individual calls instead of submitting Vecs. Requires some borrowing to allow passes etc.
 - Allow prevention of double work. Allowed to specify texture descriptions & font descriptions before the initial load.
 - Convenience functions for texture regions.
 - Consider making texture regions specify layer.

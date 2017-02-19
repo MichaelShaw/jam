@@ -50,6 +50,7 @@ impl TextureRegion {
     }
 }
 
+#[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct TextureAtlas {
     pub texture_size: u32,
     pub tiles_wide: u32,

@@ -14,7 +14,7 @@ use HashMap;
 use input::InputState;
 use color::Color;
 
-
+use glium::texture::srgb_texture2d_array::SrgbTexture2dArray;
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -45,7 +45,7 @@ pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
     pub display: glium::Display,
     pub input_state: InputState,
     pub program : Option<Program>,
-    pub texture : Option<(Texture2dArray, TextureArrayDimensions)>,
+    pub texture : Option<(SrgbTexture2dArray, TextureArrayDimensions)>,
     pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
     pub last_dimensions : Dimensions,
     pub fonts: Vec<LoadedBitmapFont>,
