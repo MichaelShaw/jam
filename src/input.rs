@@ -17,6 +17,18 @@ impl MouseState {
     pub fn left_pushed(&self) -> bool {
         self.pushed.contains(&glutin::MouseButton::Left)
     }
+
+    pub fn left_released(&self) -> bool {
+        self.released.contains(&glutin::MouseButton::Left)
+    }
+
+    pub fn right_pushed(&self) -> bool {
+        self.pushed.contains(&glutin::MouseButton::Right)
+    }
+
+    pub fn right_released(&self) -> bool {
+        self.released.contains(&glutin::MouseButton::Right)
+    }
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
