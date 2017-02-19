@@ -49,3 +49,55 @@ impl TextureRegion {
         ((self.v_max - self.v_min) as f32) / (self.texture_size as f32)
     }
 }
+
+pub struct TextureAtlas {
+    pub texture_size: u32,
+    pub tiles_wide: u32,
+    pub tiles_high: u32,
+}
+
+impl TextureAtlas {
+    pub fn per_tile_x(&self) -> u32 {
+        self.texture_size / self.tiles_wide
+    }
+
+    pub fn per_tile_y(&self) -> u32 {
+        self.texture_size / self.tiles_high
+    }
+
+    pub fn tile_extents_x(&self, u:u32, width:u32) -> (u32, u32) {
+        let u_min = self.per_tile_x() * u;
+        let u_max = u_min + self.per_tile_x() * width;
+        (u_min, u_max)
+    }
+
+    pub fn tile_extents_y(&self, v:u32, height: u32) -> (u32, u32) {
+        let v_min = self.per_tile_y() * v;
+        let v_max = v_min + self.per_tile_y() * height;
+        (v_min, v_max)
+    }
+
+    pub fn at(&self, u: u32, v:u32) -> TextureRegion {
+        let (u_min, u_max) = self.tile_extents_x(u, 1);
+        let (v_min, v_max) = self.tile_extents_y(v, 1);
+        TextureRegion {
+            u_min: u_min,
+            u_max: u_max,
+            v_min: v_min,
+            v_max: v_max,
+            texture_size: self.texture_size,
+        }
+    }
+
+    pub fn get(&self, u: u32, v: u32, wide: u32, high: u32) -> TextureRegion {
+        let (u_min, u_max) = self.tile_extents_x(u, wide);
+        let (v_min, v_max) = self.tile_extents_y(v, high);
+         TextureRegion {
+            u_min: u_min,
+            u_max: u_max,
+            v_min: v_min,
+            v_max: v_max,
+            texture_size: self.texture_size,
+        }
+    }
+}
