@@ -202,7 +202,7 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
             let mut target = self.display.draw();
 
-            target.clear_color_and_depth(clear_color.float_tup(), 1.0);
+            target.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
 
             let tex = tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
 
