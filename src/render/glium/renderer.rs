@@ -63,7 +63,7 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
 }
 
 impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
-    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32)) -> JamResult<Renderer<BufferKey>> { //  
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32), window_name: String) -> JamResult<Renderer<BufferKey>> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
@@ -71,7 +71,7 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         resource_file_watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
         resource_file_watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
 
-        let display = window::create_window("mah window", true, initial_dimensions)?;
+        let display = window::create_window(&window_name, true, initial_dimensions)?;
         
         let dimensions = dimensions_for(&display);
 
