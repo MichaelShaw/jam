@@ -97,22 +97,20 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         if found_font {
             Ok(())
         } else if let Some(dimensions) = self.texture_array_dimensions() {
-            println!("doing the fonty thing!!!");
             let mut full_path = self.font_directory.path.clone();
             full_path.push(font_description.family.clone());
             full_path.set_extension("ttf");
 
-            println!("load font {:?} with full_path -> {:?}", font_description, full_path);
+            // println!("load font {:?} with full_path -> {:?}", font_description, full_path);
 
             let font = build_font(full_path.as_path(), font_description, dimensions.width)?;
 
-            println!("we've loaded the font, unloading the texture");
             self.fonts.push(font);
             self.texture = None;
 
             Ok(())
         } else {
-            println!("must load texture before font, you doophus");
+            // println!("must load texture before font, you doophus");
             Err(JamError::MustLoadTextureBeforeFont)
         }
     }
