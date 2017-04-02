@@ -73,7 +73,7 @@ pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f
     }
     
     // unsure what we should be returning here to be honest ... extents I guess?
-    Vec2::new(top_left.y + at.y, max_x)
+    Vec2::new(max_x, top_left.y + at.y)
 }
 
 pub fn measure(text: &str, font: &BitmapFont, scale: f64, max_width: Option<f64>) -> Vec2 {
@@ -111,7 +111,7 @@ pub fn measure(text: &str, font: &BitmapFont, scale: f64, max_width: Option<f64>
         at.y -= per_line;
     }
     
-    Vec2::new(-at.y, max_x)
+    Vec2::new(max_x, -at.y)
 }
 
 pub fn measure_width(text: &str, font: &BitmapFont, scale: f64) -> f64 {
