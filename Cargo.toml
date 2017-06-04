@@ -6,10 +6,10 @@ authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 [dependencies]
 glium = "0.16"
 glutin = "0.7"
-image = "0.12"
-cgmath = "0.12"
-fnv = "1.0"
+image = "0.13"
+cgmath = "0.14"
 notify = "3.0"
 time = "0.1"
 rusttype = "0.2"
 
+aphid = { git = "https://github.com/michaelshaw/aphid" }

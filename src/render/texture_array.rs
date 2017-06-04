@@ -5,7 +5,7 @@ use image;
 use image::GenericImage;
 use std::fmt;
 
-use HashSet;
+use aphid::HashSet;
 
 use JamResult;
 use JamError;

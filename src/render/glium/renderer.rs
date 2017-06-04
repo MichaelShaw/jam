@@ -10,7 +10,7 @@ use render::shader::ShaderPair;
 use render::texture_array::{TextureDirectory, TextureArrayDimensions};
 
 use input;
-use HashMap;
+use aphid::HashMap;
 use input::InputState;
 use color::Color;
 

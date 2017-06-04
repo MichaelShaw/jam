@@ -1,7 +1,9 @@
 
 use render::TextureRegion;
 use image::{RgbaImage, Rgba};
-use {HashMap, load_file_contents};
+use {load_file_contents};
+
+use aphid::HashMap;
 
 use std::path::{PathBuf, Path};
 

@@ -9,10 +9,12 @@ extern crate time;
 
 extern crate cgmath;
 extern crate image;
-extern crate fnv;
 
 extern crate notify;
 extern crate rusttype;
+
+extern crate aphid;
+
 
 pub mod render;
 pub mod camera;
@@ -32,10 +34,6 @@ pub use geometry::*;
 pub use input::*;
 pub use spring::*;
 
-use fnv::FnvHasher;
-use std::collections::{HashMap as StdHashMap, HashSet as StdHashSet};
-use std::hash::BuildHasherDefault;
-
 use std::path::PathBuf;
 use std::path::Path;
 
@@ -45,8 +43,6 @@ use std::fs::File;
 use std::io;
 use std::io::Read;
 
-pub type HashMap<K, V> = StdHashMap<K, V, BuildHasherDefault<FnvHasher>>;
-pub type HashSet<V> = StdHashSet<V, BuildHasherDefault<FnvHasher>>;
 
 pub type JamResult<T> = Result<T, JamError>;
 
@@ -82,25 +78,6 @@ impl From<io::Error> for JamError {
     fn from(val: io::Error) -> JamError {
         JamError::IO(val)
     }
-}
-
-
-#[macro_export]
-macro_rules! hashset {
-    ($($val: expr ),*) => {{
-         let mut set = HashSet::default();
-         $( set.insert( $val); )*
-         set
-    }}
-}
-
-#[macro_export]
-macro_rules! hashmap {
-    ($( $key: expr => $val: expr ),*) => {{
-         let mut map = HashMap::default();
-         $( map.insert($key, $val); )*
-         map
-    }}
 }
 
 

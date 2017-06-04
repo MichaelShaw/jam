@@ -1,10 +1,13 @@
 #![allow(dead_code)]
-#[macro_use]
+
 extern crate jam;
 extern crate cgmath;
 extern crate time;
 extern crate glutin;
 extern crate image;
+
+#[macro_use]
+extern crate aphid;
 
 use std::f64::consts::PI;
 use std::path::Path;
@@ -15,7 +18,7 @@ use jam::camera::Camera;
 use jam::color;
 use jam::color::{Color, rgb};
 
-use jam::HashSet;
+use aphid::HashSet;
 
 use jam::{Vec3, Vec2};
 
