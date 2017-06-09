@@ -18,7 +18,7 @@ use jam::camera::Camera;
 use jam::color;
 use jam::color::{Color, rgb};
 
-use aphid::HashSet;
+use aphid::{HashSet, Seconds};
 
 use jam::{Vec3, Vec2};
 
@@ -27,7 +27,7 @@ use jam::dimensions::Dimensions;
 use jam::render::command::*;
 use jam::render::command::Command::*;
 use jam::render::command::Blend;
-use jam::render::{Seconds};
+
 use jam::render::ShaderPair;
 use jam::render::TextureDirectory;
 use jam::render::text;

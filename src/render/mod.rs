@@ -15,8 +15,6 @@ pub use self::command::*;
 pub use self::quads::*;
 pub use self::shader::*;
 
-pub type Seconds = f64;
-
 
 pub fn down_size_m4(arr: [[f64; 4];4]) -> [[f32; 4]; 4] {
     let mut out : [[f32; 4]; 4] = [[0.0; 4]; 4];
