@@ -11,6 +11,5 @@ cgmath = "0.14"
 notify = "3.0"
 time = "0.1"
 rusttype = "0.2"
-num-rational = "0.1.36"
 
 aphid = { git = "https://github.com/michaelshaw/aphid" }
