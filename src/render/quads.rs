@@ -37,6 +37,10 @@ const Z_POS : [f32; 3] = [0.0, 0.0, 1.0];
 const Z_NEG : [f32; 3] = [0.0, 0.0, -1.0];
  
 impl GeometryTesselator {
+    pub fn clear(&mut self) {
+        self.tesselator.clear()
+    }
+    
     pub fn new(scale:Vec3) -> GeometryTesselator {
         let quad_tesselator = QuadTesselator { vertices: Vec::new() };
         GeometryTesselator {

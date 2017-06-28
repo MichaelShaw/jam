@@ -1,5 +1,4 @@
 #![allow(dead_code)]
-
 extern crate jam;
 extern crate cgmath;
 extern crate time;
@@ -12,32 +11,27 @@ extern crate aphid;
 use std::f64::consts::PI;
 use std::path::Path;
 
+
+use cgmath::Rad;
+
+use aphid::{HashSet, Seconds};
+
 use jam::font::FontDirectory;
 use jam::input::InputState;
 use jam::camera::Camera;
 use jam::color;
 use jam::color::{Color, rgb};
 
-use aphid::{HashSet, Seconds};
-
-use jam::{Vec3, Vec2};
+use jam::{Vec3, Vec2, JamResult};
 
 use jam::dimensions::Dimensions;
 
 use jam::render::command::*;
-use jam::render::command::Command::*;
-use jam::render::command::Blend;
 
-use jam::render::ShaderPair;
-use jam::render::TextureDirectory;
-use jam::render::text;
-use jam::render::GeometryTesselator;
-use jam::render::TextureRegion;
-use jam::render::glium::renderer;
-use jam::render::down_size_m4;
-use jam::render::glium::renderer::Renderer;
+use jam::render::*;
+use jam::render::glium::renderer::{Renderer, GeometryBuffer};
 
-use cgmath::Rad;
+use aphid::HashMap;
 
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
@@ -61,6 +55,7 @@ fn main() {
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
+        geometry: HashMap::default(),
     };
     app.run();
 }
@@ -71,7 +66,8 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer:Renderer<String>,
+    renderer:Renderer,
+    geometry : HashMap<String, GeometryBuffer>,
 }
 
 impl App {
@@ -85,9 +81,7 @@ impl App {
 
             self.update(&input_state, dimensions, delta_time);  
 
-            let render_passes = self.render();
-
-            self.renderer.render(render_passes, rgb(132, 193, 255));
+            let res = self.render();
 
             last_time = time;
             if input_state.close {
@@ -106,41 +100,6 @@ impl App {
         GeometryTesselator::new(tesselator_scale)
     }
 
-    fn raster(&self, color:Color, x:f64, z:f64) -> GeometryTesselator {
-         let texture_region = TextureRegion {
-            u_min: 0,
-            u_max: 128,
-            v_min: 0,
-            v_max: 128,
-            texture_size: 1024,
-        };
-
-        let texture_region_small = TextureRegion {
-            u_min: 16,
-            u_max: 32,
-            v_min: 16,
-            v_max: 32,
-            texture_size: 1024,
-        };
-        
-        let mut t = self.tesselator();
-        t.color = color.float_raw();
-        t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
-        t.color = color::RED.float_raw();
-        t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
-        t.color = color::GREEN.float_raw();
-        t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
-        t.color = color::YELLOW.float_raw();
-
-        t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
-
-        t.color = color::RED.float_raw();
-        t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
-        t.color = color::YELLOW.float_raw();
-        t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
-        t
-    }
-
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
         use glutin::VirtualKeyCode;
         self.n += 1;
@@ -150,8 +109,8 @@ impl App {
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
 
-        let (mx, my) = input_state.mouse.at;
-        let mouse_at = self.camera.ui_line_segment_for_mouse_position(mx, my);
+        // let (mx, my) = input_state.mouse.at;
+        // let mouse_at = self.camera.ui_line_segment_for_mouse_position(mx, my);
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
             println!("take a screenshot!");
@@ -161,7 +120,7 @@ impl App {
         }
     }
 
-    fn render(&mut self) -> Vec<Pass<String>> {
+    fn render(&mut self) -> JamResult<()> {
         use jam::font::FontDescription;
         
         let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
@@ -170,11 +129,6 @@ impl App {
             Err(e) => println!("font load error -> {:?}", e),
             Ok(_) => (),
         }
-
-        let mut opaque_commands : Vec<Command<String>> = Vec::new();
-        let mut translucent_commands : Vec<Command<String>> = Vec::new();
-        let mut additive_commands : Vec<Command<String>> = Vec::new();
-        let mut ui_commands : Vec<Command<String>> = Vec::new();
 
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
@@ -194,59 +148,63 @@ impl App {
             let name : String = format!("zone_{}", column);
             println!("delete {}", name);
             let pred : Box<Fn(&String) -> bool> = Box::new(move |key| key.starts_with(&name));
-            opaque_commands.push(DeleteMatching { pred: pred });
+
+            let keys_to_delete : Vec<_>= self.geometry.keys().filter(|e| pred(e)).cloned().collect();
+            for key in keys_to_delete.iter() {
+                self.geometry.remove(key);
+            }
         }
 
         // k.starts_with(&prefix)
 
         let n = (((an % 16) as f64) / 16.0 * 255.0) as u8;
 
+        let mut t = self.tesselator();
+        let cache = &mut self.geometry;
+        let camera = &self.camera;
 
+        // this closure shit is just dangerous
+
+        let mut frame = self.renderer.render(rgb(132, 193, 255))?;
+        
+        // render a grid of various bits of geo
         for i in 0..16 {
             let xo = i % 4;
             let zo = i / 4;
             let name : String = format!("zone_{}_{}", xo, zo);
 
             if (an % 16) == i && on_second {
-                let t = self.raster(raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                opaque_commands.push(DrawNew {
-                    key: Some(name), 
-                    vertices: t.tesselator.vertices, 
-                    uniforms: Uniforms {
-                        transform : down_size_m4(self.camera.view_projection().into()),
-                        color: color::WHITE,
-                    }
-                });
+                raster(&mut t, raster_color, (xo * 9) as f64, (zo * 9) as f64);
+                let geo = frame.draw_vertices(&t.tesselator.vertices, Uniforms {
+                    transform : down_size_m4(camera.view_projection().into()),
+                    color: color::WHITE,
+                }, Blend::None);
+                cache.insert(name, geo);
             } else if ((an+8) % 16) == i && on_second {
-                let t = self.raster(raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                opaque_commands.push(Update {
-                    key: name, 
-                    vertices: t.tesselator.vertices,
-                }); 
+                raster(&mut t, raster_color, (xo * 9) as f64, (zo * 9) as f64);
+                cache.insert(name, frame.upload(&t.tesselator.vertices));
             } else {
                 let rem = (xo + zo) % 3;
-
                 let color = match rem {
                     0 => color::rgba(255,255,255, 128),
                     1 => color::rgba(255,255,255, 50),
                     _ => color::WHITE,
                 };
-                let command = Draw {
-                    key: name,
-                     uniforms: Uniforms {
+                if let Some(geo) = cache.get(&name) {
+                    let blend = match rem {
+                        0 => Blend::Alpha,   
+                        1 => Blend::Add,
+                        _ => Blend::None,
+                    };
+                    frame.draw(geo, Uniforms {
                         transform: down_size_m4(self.camera.view_projection().into()),
                         color: color,
-                    }
-                };
-                
-                match rem {
-                    0 => translucent_commands.push(command),   
-                    1 => additive_commands.push(command),
-                    _ => opaque_commands.push(command),
-                };
+                    },blend);
+                }
             }
         }
 
+        // draw ui text
 
         if let Some((font, layer)) = self.renderer.get_font(&font_description) {
             // println!("ok we got a font to use to draw layer -> {:?}", layer);
@@ -276,32 +234,49 @@ impl App {
                 Some(300.0)
             );
 
-            ui_commands.push(DrawNew {
-                key: None, 
-                vertices: t.tesselator.vertices, 
-                uniforms: Uniforms {
-                    transform : down_size_m4(self.camera.ui_projection().into()),
-                    color: color::WHITE,
-                }
-            });
+            frame.draw_vertices(&t.tesselator.vertices, Uniforms {
+                transform : down_size_m4(self.camera.ui_projection().into()),
+                color: color::WHITE,
+            }, Blend::Alpha);
         }
 
-        vec![Pass {
-            blend: Blend::None,
-            commands: opaque_commands,
-            clear_depth: false,
-        }, Pass {
-            blend: Blend::Alpha,
-            commands: translucent_commands,
-            clear_depth: false,
-        }, Pass {
-            blend: Blend::Add,
-            commands: additive_commands,
-            clear_depth: false,
-        }, Pass {
-            blend: Blend::Alpha,
-            commands: ui_commands,
-            clear_depth: true,
-        }]
+        frame.finish();
+
+        Ok(())
     }
+}
+
+fn raster(t: &mut GeometryTesselator, color:Color, x:f64, z:f64) {
+    t.clear();
+
+    let texture_region = TextureRegion {
+        u_min: 0,
+        u_max: 128,
+        v_min: 0,
+        v_max: 128,
+        texture_size: 1024,
+    };
+
+    let texture_region_small = TextureRegion {
+        u_min: 16,
+        u_max: 32,
+        v_min: 16,
+        v_max: 32,
+        texture_size: 1024,
+    };
+
+    t.color = color.float_raw();
+    t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
+    t.color = color::RED.float_raw();
+    t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
+    t.color = color::GREEN.float_raw();
+    t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+    t.color = color::YELLOW.float_raw();
+
+    t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
+
+    t.color = color::RED.float_raw();
+    t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+    t.color = color::YELLOW.float_raw();
+    t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
 }

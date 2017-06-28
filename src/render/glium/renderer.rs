@@ -10,11 +10,13 @@ use render::shader::ShaderPair;
 use render::texture_array::{TextureDirectory, TextureArrayDimensions};
 
 use input;
-use aphid::HashMap;
+
 use input::InputState;
 use color::Color;
 
 use glium::texture::srgb_texture2d_array::SrgbTexture2dArray;
+
+use render::command::{Uniforms, Blend};
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -22,8 +24,6 @@ use notify::{RecommendedWatcher, Watcher, RecursiveMode, RawEvent};
 
 use super::window;
 use super::program;
-use render::command::*;
-use render::command::Command::*;
 
 use dimensions::Dimensions;
 use render::vertex::Vertex;
@@ -32,11 +32,13 @@ use font::*;
 
 use {JamResult, JamError};
 
-use std::hash::Hash;
-
 use image;
 
-pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
+pub struct GeometryBuffer {
+    pub vertex_buffer: VertexBuffer<Vertex>,
+}
+
+pub struct Renderer {
     pub shader_pair : ShaderPair,
     pub texture_directory: TextureDirectory,
     pub font_directory: FontDirectory,
@@ -46,7 +48,6 @@ pub struct Renderer<BufferKey> where BufferKey : Hash + Eq {
     pub input_state: InputState,
     pub program : Option<Program>,
     pub texture : Option<(SrgbTexture2dArray, TextureArrayDimensions)>,
-    pub vertex_buffers : HashMap<BufferKey, VertexBuffer<Vertex>>,
     pub last_dimensions : Dimensions,
     pub fonts: Vec<LoadedBitmapFont>,
 }
@@ -62,8 +63,8 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
     }  
 }
 
-impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
-    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32), window_name: String) -> JamResult<Renderer<BufferKey>> { //  
+impl Renderer {
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32), window_name: String) -> JamResult<Renderer> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
@@ -85,7 +86,6 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
             input_state: InputState::default(),
             program : None,
             texture : None,
-            vertex_buffers : HashMap::default(),
             last_dimensions : dimensions,
             fonts: Vec::new(),
         })
@@ -198,74 +198,72 @@ impl <BufferKey> Renderer<BufferKey> where BufferKey : Hash + Eq + Clone {
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render(&mut self, passes: Vec<Pass<BufferKey>>, clear_color: Color) -> JamResult<()> {
+    pub fn render<'b>(&'b self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
         if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
-            let mut target = self.display.draw();
+            let mut frame = self.display.draw(); 
+            frame.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
+            Ok(RenderFrame {
+                display: &self.display,
+                frame: frame,
+                program: pr,
+                texture: tr,
+            })
+            
 
-            target.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
-
-            let tex = tr.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
-
-            for pass in passes {
-                let blend = program::draw_params_for_blend(pass.blend);
-                if pass.clear_depth {
-                    target.clear_depth(1.0);
-                }
-
-                for command in pass.commands {
-                    // println!("received command -> {:?}", command);
-                    match command {
-                        Delete { key } => {
-                            let _ = self.vertex_buffers.remove(&key);
-                        },
-                        DeleteMatching { pred } => {
-                            let keys_to_delete : Vec<_>= self.vertex_buffers.keys().filter(|e| pred(e)).cloned().collect();
-                            for key in keys_to_delete.iter() {
-                                self.vertex_buffers.remove(key);
-                            }
-                        }
-                        Update { key, vertices } => {
-                            let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
-                            self.vertex_buffers.insert(key, new_vertex_buffer);
-                        },
-                        Draw { key, uniforms } => {
-                            if let Some(vertex_buffer) = self.vertex_buffers.get(&key) {
-                                let uniforms = uniform! {
-                                    u_matrix: uniforms.transform,
-                                    u_texture_array: tex,
-                                    u_color: uniforms.color.float_raw(),
-                                    u_alpha_minimum: 0.01_f32,
-                                };
-                                target.draw(vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &blend).unwrap();
-                            } else {
-                                // println!("couldnt draw for {:?}", key);
-                            }
-                        },
-                        DrawNew { key , vertices, uniforms } => {
-                            let new_vertex_buffer = VertexBuffer::persistent(&self.display,&vertices).unwrap();
-
-                            let uniforms = uniform! {
-                                u_matrix: uniforms.transform,
-                                u_texture_array: tex,
-                                u_color: uniforms.color.float_raw(),
-                                u_alpha_minimum: 0.01_f32,
-                            };
-
-                            target.draw(&new_vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), &pr, &uniforms, &blend).unwrap();
-
-                            if let Some(name) = key {
-                                self.vertex_buffers.insert(name,new_vertex_buffer);
-                            }
-                        },
-                    }
-                }
-            }
-            target.finish().map_err(JamError::SwapBufferError)
+            // frame.finish().map_err(JamError::SwapBufferError)
         } else {
             Err(JamError::RenderingPipelineIncomplete)
         }
     }
 }
+
+pub struct RenderFrame<'a> {
+    pub frame: glium::Frame,
+    pub display: &'a glium::Display,
+    pub program: &'a Program,
+    pub texture: &'a glium::texture::SrgbTexture2dArray,
+}
+
+impl<'a> RenderFrame<'a> {
+    pub fn finish(self) {
+        self.frame.finish().unwrap()
+    }
+
+    pub fn clear_depth(&mut self) {
+        self.frame.clear_depth(1.0)
+    }
+
+    pub fn upload(&self, vertices: &[Vertex]) -> GeometryBuffer {
+        let vbo = VertexBuffer::persistent(self.display, vertices).unwrap();
+        GeometryBuffer { vertex_buffer: vbo }
+    }
+
+    pub fn draw_vertices(&mut self, vertices: &[Vertex], uniforms: Uniforms, blend:Blend) -> GeometryBuffer {
+        let vbo = VertexBuffer::persistent(self.display, vertices).unwrap();
+        let geometry = GeometryBuffer { vertex_buffer: vbo };
+        self.draw(&geometry, uniforms, blend);
+        geometry
+    }
+
+    pub fn draw(&mut self, geometry: &GeometryBuffer, uniforms: Uniforms, blend:Blend) {
+        // need to get this outta here
+        let tex = self.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
+
+        let u = uniform! {
+            u_matrix: uniforms.transform,
+            u_texture_array: tex,
+            u_color: uniforms.color.float_raw(),
+            u_alpha_minimum: 0.01_f32,
+        };
+
+        let bl = program::draw_params_for_blend(blend);
+
+        self.frame.draw(&geometry.vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), self.program, &u, &bl).unwrap();
+    }
+}
+
+// do we _really_ need a pass abstraction .... let's at least not race to it..
+
 
 pub fn check_reload(rx: &Receiver<RawEvent>, shader_pair:&ShaderPair, texture_directory: &TextureDirectory) -> (bool, bool) {
     let mut reload_program = false;
@@ -290,5 +288,5 @@ pub fn check_reload(rx: &Receiver<RawEvent>, shader_pair:&ShaderPair, texture_di
         }
     }
 
-     (reload_program, reload_texture)
+    (reload_program, reload_texture)
 }
