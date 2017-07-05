@@ -79,6 +79,9 @@ impl TextureDirectory {
         let my_components : Vec<path::Component> = self.path.components().collect();
         let components : Vec<path::Component> = path.components().collect();
 
+        println!("my components -> {:?}", my_components);
+        println!("components of -> {:?}", components);
+
         components.windows(my_components.len()).position(|window| {
             window == &my_components[..]
         }).is_some()
