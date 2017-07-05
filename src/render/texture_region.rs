@@ -53,28 +53,19 @@ impl TextureRegion {
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct TextureAtlas {
     pub texture_size: u32,
-    pub tiles_wide: u32,
-    pub tiles_high: u32,
+    pub tile_size: u32,
 }
 
 impl TextureAtlas {
-    pub fn per_tile_x(&self) -> u32 {
-        self.texture_size / self.tiles_wide
-    }
-
-    pub fn per_tile_y(&self) -> u32 {
-        self.texture_size / self.tiles_high
-    }
-
     pub fn tile_extents_x(&self, u:u32, width:u32) -> (u32, u32) {
-        let u_min = self.per_tile_x() * u;
-        let u_max = u_min + self.per_tile_x() * width;
+        let u_min = self.tile_size * u;
+        let u_max = u_min + self.tile_size * width;
         (u_min, u_max)
     }
 
     pub fn tile_extents_y(&self, v:u32, height: u32) -> (u32, u32) {
-        let v_min = self.per_tile_y() * v;
-        let v_max = v_min + self.per_tile_y() * height;
+        let v_min = self.tile_size * v;
+        let v_max = v_min + self.tile_size * height;
         (v_min, v_max)
     }
 
