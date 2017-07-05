@@ -2,10 +2,12 @@
 use font::BitmapFont;
 use super::quads;
 
+use render::vertex::Vertex;
+
 use Vec2;
 
 // simple naive render
-pub fn render(text:&str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, scale: f64, tesselator: &mut quads::GeometryTesselator) -> Vec2 {
+pub fn render(text:&str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, scale: f64, tesselator: &quads::GeometryTesselator, vertices: &mut Vec<Vertex>) -> Vec2 {
     let mut at = top_left;
 
     // yes, we're allocating here, I know it's evil ... it's to make kerning easy
@@ -15,7 +17,7 @@ pub fn render(text:&str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, sc
         if let Some(glyph) = font.glyphs.get(&c) {
             // no kerning yet
             if let Some(ref tr) = glyph.texture_region {
-                tesselator.draw_ui(tr, layer, at.x as f64, at.y as f64, z, false, scale);
+                tesselator.draw_ui(vertices, tr, layer, at.x as f64, at.y as f64, z, false, scale);
             }
 
             let kerning : i32 = if i < chars.len() - 1 {
@@ -33,7 +35,7 @@ pub fn render(text:&str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, sc
     at
 }
 
-pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, scale: f64, tesselator: &mut quads::GeometryTesselator, max_width : Option<f64>) -> Vec2 {
+pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, scale: f64, tesselator: &quads::GeometryTesselator, vertices: &mut Vec<Vertex>, max_width : Option<f64>) -> Vec2 {
     let mut at = top_left;
 
     let per_line = (font.description.pixel_size as f64) * scale;
@@ -55,7 +57,7 @@ pub fn render_text(text: &str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f
             } 
 
             // DO THE DRAWING HERE
-            render(word, font, layer, at, z, scale, tesselator);
+            render(word, font, layer, at, z, scale, tesselator, vertices);
 
             at.x += space_advance + word_width;
             if at.x > max_x {

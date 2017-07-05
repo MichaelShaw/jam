@@ -11,7 +11,6 @@ extern crate aphid;
 use std::f64::consts::PI;
 use std::path::Path;
 
-
 use cgmath::Rad;
 
 use aphid::{HashSet, Seconds};
@@ -25,6 +24,8 @@ use jam::color::{Color, rgb};
 use jam::{Vec3, Vec2, JamResult};
 
 use jam::dimensions::Dimensions;
+
+use jam::render::vertex::Vertex;
 
 use jam::render::command::*;
 
@@ -160,6 +161,7 @@ impl App {
         let n = (((an % 16) as f64) / 16.0 * 255.0) as u8;
 
         let mut t = self.tesselator();
+        let mut vertices = Vec::new();
         let cache = &mut self.geometry;
         let camera = &self.camera;
 
@@ -174,15 +176,15 @@ impl App {
             let name : String = format!("zone_{}_{}", xo, zo);
 
             if (an % 16) == i && on_second {
-                raster(&mut t, raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                let geo = frame.draw_vertices(&t.tesselator.vertices, Uniforms {
+                raster(&mut t, &mut vertices, raster_color, (xo * 9) as f64, (zo * 9) as f64);
+                let geo = frame.draw_vertices(&vertices, Uniforms {
                     transform : down_size_m4(camera.view_projection().into()),
                     color: color::WHITE,
                 }, Blend::None);
                 cache.insert(name, geo);
             } else if ((an+8) % 16) == i && on_second {
-                raster(&mut t, raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                cache.insert(name, frame.upload(&t.tesselator.vertices));
+                raster(&mut t, &mut vertices, raster_color, (xo * 9) as f64, (zo * 9) as f64);
+                cache.insert(name, frame.upload(&vertices));
             } else {
                 let rem = (xo + zo) % 3;
                 let color = match rem {
@@ -219,7 +221,7 @@ impl App {
                 texture_size: 1024,
             };
             t.color = color::WHITE.float_raw();
-            t.draw_ui(&texture_region, 0, 20.0, 20.0, 0.0, false, 1.0);
+            t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, false, 1.0);
 
             let at = Vec2::new(0.0, 400.0);
             t.color = color::BLACK.float_raw();
@@ -230,11 +232,12 @@ impl App {
                 at,
                 -1.0, // i assume this is because our coordinate system is hosed ... 
                 scale,
-                &mut t, 
+                &t, 
+                &mut vertices,
                 Some(300.0)
             );
 
-            frame.draw_vertices(&t.tesselator.vertices, Uniforms {
+            frame.draw_vertices(&vertices, Uniforms {
                 transform : down_size_m4(self.camera.ui_projection().into()),
                 color: color::WHITE,
             }, Blend::Alpha);
@@ -246,8 +249,8 @@ impl App {
     }
 }
 
-fn raster(t: &mut GeometryTesselator, color:Color, x:f64, z:f64) {
-    t.clear();
+fn raster(t: &mut GeometryTesselator, vertices: &mut Vec<Vertex>, color:Color, x:f64, z:f64) {
+    vertices.clear();
 
     let texture_region = TextureRegion {
         u_min: 0,
@@ -266,17 +269,17 @@ fn raster(t: &mut GeometryTesselator, color:Color, x:f64, z:f64) {
     };
 
     t.color = color.float_raw();
-    t.draw_floor_tile(&texture_region, 0, x, 0.0, z, 0.0, false);
+    t.draw_floor_tile(vertices, &texture_region, 0, x, 0.0, z, 0.0, false);
     t.color = color::RED.float_raw();
-    t.draw_wall_tile(&texture_region_small, 0, x, 0.0, z, 0.0, false);
+    t.draw_wall_tile(vertices, &texture_region_small, 0, x, 0.0, z, 0.0, false);
     t.color = color::GREEN.float_raw();
-    t.draw_floor_centre_anchored(&texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+    t.draw_floor_centre_anchored(vertices, &texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
     t.color = color::YELLOW.float_raw();
 
-    t.draw_floor_centre_anchored_rotated(&texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
+    t.draw_floor_centre_anchored_rotated(vertices, &texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
 
     t.color = color::RED.float_raw();
-    t.draw_wall_base_anchored(&texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+    t.draw_wall_base_anchored(vertices, &texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
     t.color = color::YELLOW.float_raw();
-    t.draw_wall_centre_anchored(&texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
+    t.draw_wall_centre_anchored(vertices, &texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
 }
