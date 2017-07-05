@@ -33,18 +33,18 @@ impl GeometryTesselator {
         }
     }
 
-    pub fn draw_floor_tile_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64, flip:bool) {
-        self.draw_floor_tile(vertices, tr, layer, v.x, v.y, v.z, depth_adjust, flip)
+    pub fn draw_floor_tile_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64) {
+        self.draw_floor_tile(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
     }
 
     // anchor is near x/z coord
-    pub fn draw_floor_tile(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_floor_tile(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
         let ww = (tr.width() as f64) * self.scale.x;
         let dw = (tr.height() as f64) * self.scale.y;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [ax as f32,        (y + depth_adjust) as f32, (az + dw + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
@@ -56,13 +56,13 @@ impl GeometryTesselator {
 
 
     // anchor is near x/z coord
-    pub fn draw_wall_tile(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_wall_tile(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
         let ww = (tr.width() as f64) * self.scale.x;
         let hw = (tr.height() as f64) * self.scale.z;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [ax as f32,        (ay + depth_adjust) as f32,      (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Y_POS },
@@ -73,18 +73,18 @@ impl GeometryTesselator {
     }
 
     // anchor is centre of tile
-    pub fn draw_floor_centre_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64, flip:bool)  {
-        self.draw_floor_centre_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust, flip)
+    pub fn draw_floor_centre_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64)  {
+        self.draw_floor_centre_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
     }
 
-    pub fn draw_floor_centre_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_floor_centre_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, y:f64, az:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
 
         let hww = (tr.width() as f64) * self.scale.x / 2.0;
         let hdw = (tr.height() as f64) * self.scale.z / 2.0;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
 
         add_quad(vertices, [
@@ -124,18 +124,18 @@ impl GeometryTesselator {
         ]);
     }
 
-    pub fn draw_wall_base_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64, flip:bool) {
-        self.draw_wall_base_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust, flip)
+    pub fn draw_wall_base_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64) {
+        self.draw_wall_base_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
     }
 
-    pub fn draw_wall_base_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_wall_base_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
 
         let hww = (tr.width() as f64) * self.scale.x / 2.0;
         let hhw = (tr.height() as f64) * self.scale.y;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [(ax - hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
@@ -145,18 +145,18 @@ impl GeometryTesselator {
         ]);
     }
 
-    pub fn draw_wall_centre_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64, flip:bool) {
-        self.draw_wall_centre_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust, flip)
+    pub fn draw_wall_centre_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64) {
+        self.draw_wall_centre_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
     }
 
-    pub fn draw_wall_centre_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64, flip:bool) {
+    pub fn draw_wall_centre_anchored(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
 
         let hww = (tr.width() as f64) * self.scale.x / 2.0;
         let hhw = (tr.height() as f64) * self.scale.y / 2.0;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [(ax - hww) as f32, (ay - hhw + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
@@ -166,13 +166,13 @@ impl GeometryTesselator {
         ]);
     }
 
-    pub fn draw_ui(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, flip:bool, scale: f64) {
+    pub fn draw_ui(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, scale: f64) {
         let layer_f = layer as f32;
         let ww = (tr.width() as f64) * scale;
         let hw = (tr.height() as f64) * scale;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [x as f32,        (y) as f32,      z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
@@ -182,13 +182,13 @@ impl GeometryTesselator {
         ]);
     }
 
-    pub fn draw_ui_centered(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, flip:bool, scale: f64) {
+    pub fn draw_ui_centered(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, scale: f64) {
         let layer_f = layer as f32;
         let hww = (tr.width() as f64) * scale;
         let hhw = (tr.height() as f64) * scale;
 
-        let nu_left = if flip { tr.nu_max() } else { tr.nu_min() };
-        let nu_right = if flip { tr.nu_min() } else { tr.nu_max() };
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
 
         add_quad(vertices, [
             Vertex { position: [(x - hww) as f32, (y - hhw) as f32, z as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },

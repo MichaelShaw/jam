@@ -221,7 +221,7 @@ impl App {
                 texture_size: 1024,
             };
             t.color = color::WHITE.float_raw();
-            t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, false, 1.0);
+            t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
 
             let at = Vec2::new(0.0, 400.0);
             t.color = color::BLACK.float_raw();
@@ -269,17 +269,17 @@ fn raster(t: &mut GeometryTesselator, vertices: &mut Vec<Vertex>, color:Color, x
     };
 
     t.color = color.float_raw();
-    t.draw_floor_tile(vertices, &texture_region, 0, x, 0.0, z, 0.0, false);
+    t.draw_floor_tile(vertices, &texture_region.h_flip().v_flip(), 0, x, 0.0, z, 0.0);
     t.color = color::RED.float_raw();
-    t.draw_wall_tile(vertices, &texture_region_small, 0, x, 0.0, z, 0.0, false);
+    t.draw_wall_tile(vertices, &texture_region_small, 0, x, 0.0, z, 0.0);
     t.color = color::GREEN.float_raw();
-    t.draw_floor_centre_anchored(vertices, &texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1, false);
+    t.draw_floor_centre_anchored(vertices, &texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1);
     t.color = color::YELLOW.float_raw();
 
     t.draw_floor_centre_anchored_rotated(vertices, &texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
 
     t.color = color::RED.float_raw();
-    t.draw_wall_base_anchored(vertices, &texture_region_small, 0, x + 3.0, 0.0, z, 0.0, false);
+    t.draw_wall_base_anchored(vertices, &texture_region_small, 0, x + 3.0, 0.0, z, 0.0);
     t.color = color::YELLOW.float_raw();
-    t.draw_wall_centre_anchored(vertices, &texture_region_small, 0, x + 5.0, 1.0, z, 0.0, false);
+    t.draw_wall_centre_anchored(vertices, &texture_region_small, 0, x + 5.0, 1.0, z, 0.0);
 }

@@ -1,3 +1,4 @@
+// use std::u32::abs;
 
 #[derive(PartialEq, Eq, Debug, Copy, Clone)]
 pub struct TextureRegion {
@@ -9,12 +10,56 @@ pub struct TextureRegion {
 }
 
 impl TextureRegion {
+    pub fn h_flipped(&self, flip: bool) -> TextureRegion {
+        if flip {
+            self.h_flip()
+        } else {
+            *self
+        }
+    }
+
+    pub fn v_flipped(&self, flip: bool) -> TextureRegion {
+        if flip {
+            self.v_flip()
+        } else {
+            *self
+        }   
+    }
+
+    pub fn h_flip(&self) -> TextureRegion {
+        TextureRegion {
+            u_min: self.u_max,
+            u_max: self.u_min,
+            v_min: self.v_min,
+            v_max: self.v_max,
+            texture_size: self.texture_size,
+        }
+    }
+
+    pub fn v_flip(&self) -> TextureRegion {
+        TextureRegion {
+            u_min: self.u_min,
+            u_max: self.u_max,
+            v_min: self.v_max,
+            v_max: self.v_min,
+            texture_size: self.texture_size,
+        }
+    }
+
     pub fn width(&self) -> u32 {
-        self.u_max - self.u_min
+        if self.u_max > self.u_min {
+            self.u_max - self.u_min
+        } else {
+            self.u_min - self.u_max
+        }
     }
 
     pub fn height(&self) -> u32 {
-        self.v_max - self.v_min
+        if self.v_max > self.v_min {
+            self.v_max - self.v_min
+        } else {
+            self.v_min - self.v_max
+        }
     }
 
     pub fn nu_min(&self) -> f32 {
@@ -42,11 +87,11 @@ impl TextureRegion {
     }
 
     pub fn n_width(&self) -> f32 {
-        ((self.u_max - self.u_min) as f32) / (self.texture_size as f32)
+        (self.width() as f32) / (self.texture_size as f32)
     }
 
     pub fn n_height(&self) -> f32 {
-        ((self.v_max - self.v_min) as f32) / (self.texture_size as f32)
+        (self.height() as f32) / (self.texture_size as f32)
     }
 }
 
