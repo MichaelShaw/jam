@@ -55,6 +55,10 @@ impl GeometryTesselator {
     }
 
 
+    pub fn draw_wall_tile_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64) {
+        self.draw_wall_tile(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
+    }
+
     // anchor is near x/z coord
     pub fn draw_wall_tile(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, ax:f64, ay:f64, z:f64, depth_adjust:f64) {
         let layer_f = layer as f32;
