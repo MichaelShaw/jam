@@ -149,6 +149,27 @@ impl GeometryTesselator {
         ]);
     }
 
+    pub fn draw_wall_base_anchored_stretched_at(&self, vertices: &mut Vec<Vertex>, tr: &TextureRegion, layer: u32, v:Vec3, height: f64, depth_adjust: f64) {
+        self.draw_wall_base_anchored_stretched(vertices, tr, layer, v.x, v.y, v.z, height, depth_adjust)
+    }
+
+    pub fn draw_wall_base_anchored_stretched(&self, vertices: &mut Vec<Vertex>, tr: &TextureRegion, layer: u32, ax:f64, ay: f64, z:f64, height: f64, depth_adjust: f64) {
+        let layer_f = layer as f32;
+
+        let hww = (tr.width() as f64) * self.scale.x / 2.0;
+
+        let nu_left = tr.nu_min();
+        let nu_right = tr.nu_max();
+
+        add_quad(vertices, [
+            Vertex { position: [(ax - hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay + depth_adjust) as f32,       (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_min(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax + hww) as f32, (ay + height + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_right, tr.nv_max(), layer_f], color: self.color, normal: Z_POS },
+            Vertex { position: [(ax - hww) as f32, (ay + height + depth_adjust) as f32, (z + depth_adjust) as f32], tex_coord: [nu_left , tr.nv_max(), layer_f], color: self.color, normal: Z_POS }
+        ]);
+
+    }
+
     pub fn draw_wall_centre_anchored_at(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer:u32, v:Vec3, depth_adjust:f64) {
         self.draw_wall_centre_anchored(vertices, tr, layer, v.x, v.y, v.z, depth_adjust)
     }
