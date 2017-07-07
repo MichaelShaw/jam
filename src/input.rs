@@ -2,6 +2,9 @@ extern crate glutin;
 
 use std::collections::HashSet;
 
+pub use glutin::MouseButton;
+pub use glutin::VirtualKeyCode;
+
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct MouseState {
     pub at: (i32, i32), // could make this optional for off screen? might be a stupid idea.
