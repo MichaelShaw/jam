@@ -39,7 +39,7 @@ fn main() {
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), "commands example".into()).expect("a renderer");
+    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), true, "commands example".into()).expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),

@@ -64,7 +64,7 @@ fn dimensions_for(display : &glium::Display) -> Dimensions {
 }
 
 impl Renderer {
-    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32), window_name: String) -> JamResult<Renderer> { //  
+    pub fn new(shader_pair : ShaderPair, texture_directory: TextureDirectory, font_directory: FontDirectory, initial_dimensions: (u32, u32), vsync:bool, window_name: String) -> JamResult<Renderer> { //  
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
@@ -72,7 +72,7 @@ impl Renderer {
         resource_file_watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
         resource_file_watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
 
-        let display = window::create_window(&window_name, true, initial_dimensions)?;
+        let display = window::create_window(&window_name, vsync, initial_dimensions)?;
         
         let dimensions = dimensions_for(&display);
 
