@@ -4,12 +4,6 @@ use Vec3;
 use Vec2;
 use cgmath::*;
 
-pub struct Box {
-    pub from: Vec2,
-    pub to: Vec2,
-}
-
-
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct LineSegment {
     pub from: Vec3,
