@@ -12,7 +12,7 @@ extern crate image;
 
 extern crate notify;
 extern crate rusttype;
-
+#[macro_use]
 extern crate aphid;
 
 
@@ -24,6 +24,7 @@ pub mod spring;
 pub mod color;
 pub mod font;
 pub mod dimensions;
+pub mod ui;
 
 pub use font::*;
 pub use camera::*;
@@ -90,11 +91,6 @@ pub fn clamp<T : PartialOrd>(n:T, min:T, max:T) -> T {
         n
     }
 }
-
-pub fn vec3(x:f64, y:f64, z:f64) -> Vec3 {
-    Vec3::new(x, y, z)
-}
-
 
 pub fn vec2i(x:i32, y:i32) -> Vec2i {
     Vec2i::new(x, y)
