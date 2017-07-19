@@ -124,7 +124,7 @@ impl App {
     fn render(&mut self) -> JamResult<()> {
         use jam::font::FontDescription;
         
-        let font_description = FontDescription { family: "DejaVuSerif".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
+        let font_description = FontDescription { family: "Roboto-Medium".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),

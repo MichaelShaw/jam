@@ -18,7 +18,7 @@ fn main() {
 
 	let start_time = time::precise_time_ns();
 	
-    let font_result = build_font(Path::new("./resources/fonts/DejaVuSerif.ttf"), &font_description, 1024);
+    let font_result = build_font(Path::new("./resources/fonts/Roboto-Medium.ttf"), &font_description, 1024);
 
 
     let duration = time::precise_time_ns() - start_time; 
