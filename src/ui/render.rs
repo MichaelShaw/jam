@@ -57,7 +57,3 @@ impl<W> WidgetRunner<W> where W : Widget {
     }
 }
 
-
-pub fn events<Ev>(last_input: &InputState, input: &InputState, view: View<Ev>) -> Vec<Ev> {
-    Vec::new()
-}

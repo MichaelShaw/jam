@@ -1,5 +1,6 @@
 use super::RectI;
 use Color;
+use color;
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct Layer {
@@ -8,7 +9,7 @@ pub struct Layer {
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub enum Element {
+pub enum Element { // "content"
     Text(Text),
     Image(ImageSource),
 }
@@ -26,6 +27,18 @@ pub struct Text {
     pub size: i32,
     pub horizontal_alignment: HorizontalAlignment,
     pub vertical_alignment: VerticalAlignment,
+}
+
+impl Text {
+    pub fn new(text:String) -> Text {
+        Text {
+            characters: text,
+            color: color::WHITE,
+            size: 10,
+            horizontal_alignment: HorizontalAlignment::Left,
+            vertical_alignment: VerticalAlignment::Top,
+        }
+    }
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]

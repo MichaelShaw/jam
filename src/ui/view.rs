@@ -1,4 +1,4 @@
-use ui::{Rect, Layer, MouseEvent, ZLayer, Point2I, RectI};
+use ui::{Rect, Layer, MouseEvent, ZLayer, Point2I, RectI, Text, Element};
 use cgmath::vec2;
 
 use std::fmt;
@@ -26,6 +26,14 @@ impl<Ev> View<Ev> {
             queue,
         }
     }
+
+    pub fn layer_iter<'a>(&'a self) -> LayerIterator<'a, Ev> {
+        let queue = vec![(self, vec2(0, 0), 0)];
+        LayerIterator {
+            views: queue,
+            layer_idx: 0,
+        }
+    }
 }
 
 pub struct ViewIterator<'a, Ev> where Ev: 'a {
@@ -40,17 +48,46 @@ impl<'a, Ev> Iterator for ViewIterator<'a, Ev> {
             for sv in &view.sub_views {
                 self.queue.push((sv, parent_origin + view.frame.min, z+1));
             }
-            Some((view, view.frame.offset(&parent_origin), z))
+            Some((view, view.frame.offset(parent_origin), z))
         } else {
             None
         }
     }
 }
 
-//pub struct ElementIterator<'a, Ev> where Ev: 'a {
-//    queue : Vec<(&'a, View<Ev>>
-//}
+pub struct LayerIterator<'a, Ev> where Ev: 'a {
+    views : Vec<(&'a View<Ev>, Point2I, ZLayer)>,
+    layer_idx: usize,
+}
 
+impl<'a, Ev> Iterator for LayerIterator<'a, Ev> {
+    type Item = (&'a Layer, RectI, (ZLayer, ZLayer));
+
+    fn next(&mut self) -> Option<(&'a Layer, RectI, (ZLayer, ZLayer))> {
+        if let Some(&(view, parent_origin, z)) = self.views.last() {
+            if self.layer_idx < view.layers.len() {
+                let l = &view.layers[self.layer_idx];
+                let layer_z = self.layer_idx as ZLayer;
+                self.layer_idx += 1;
+                let layer_frame = l.frame.offset(parent_origin + view.frame.min);
+                return Some((l, layer_frame, (z, layer_z)));
+            } else {
+                // reset layer for next view
+                self.layer_idx = 0;
+            }
+        }
+
+        // no more layers
+        if let Some((view, parent_origin, z)) = self.views.pop() {
+            for sv in &view.sub_views {
+                self.views.push((sv, parent_origin + view.frame.min, z+1));
+            }
+            self.next()
+        } else {
+            None
+        }
+    }
+}
 
 
 #[cfg(test)]
@@ -79,7 +116,7 @@ mod tests {
                     min: vec2(0, i * 30),
                     max: vec2(100, (i + 1) * 30),
                 },
-                content: Element::T,
+                content: Element::Text(Text::new("awesome".into())),
             });
         }
 
@@ -102,10 +139,24 @@ mod tests {
             v.sub_views.push(empty_view(vec2(10 * i, 10)));
         }
 
+        println!("====== VIEWS =======");
+
         for (v, r, z) in v.iter() {
             println!("view -> {:?} rect -> {:?} z -> {:?}", v, r, z);
         }
+    }
 
+    #[test]
+    fn layer_iterator() {
+        let mut v = empty_view(vec2(100, 100));
+        for i in 0..3 {
+            v.sub_views.push(view_with_text(vec2(100 * i, 0)));
+        }
 
+        println!("====== LAYERS =======");
+
+        for (l, r, z) in v.layer_iter() {
+            println!("layer -> {:?} rect -> {:?} z -> {:?}", l, r, z);
+        }
     }
 }

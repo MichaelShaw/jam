@@ -28,7 +28,7 @@ pub struct Rect<F> {
 }
 
 impl<F> Rect<F> where F: BaseNum {
-    pub fn offset(&self, v:&Vector2<F>) -> Rect<F> {
+    pub fn offset(&self, v:Vector2<F>) -> Rect<F> {
         Rect {
             min: self.min + v,
             max: self.max + v,
