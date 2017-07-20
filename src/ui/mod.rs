@@ -1,13 +1,16 @@
 pub mod example;
+
 pub mod component;
 pub mod render;
 pub mod view;
 pub mod event;
+pub mod layer;
 
 pub use self::view::*;
 pub use self::component::*;
 pub use self::render::*;
 pub use self::event::*;
+pub use self::layer::*;
 
 use Color;
 use cgmath::{Vector2, BaseNum};
@@ -49,55 +52,6 @@ pub trait Widget {
 }
 
 
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub enum MouseEvent {
-    MouseIn,
-    MouseOut,
-    MouseMove,
-    MouseDown,
-    MouseUp,
-}
-
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub struct Layer {
-    pub frame: Rect<i32>,
-    pub content: Element,
-}
-
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub enum Element {
-    Text(Text),
-    Image(ImageSource),
-}
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub struct ImageSource {
-    pub layer: i32,
-    pub rect: Rect<i32>,
-}
-
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub struct Text {
-    pub characters : String,
-    pub color: Color,
-    pub size: i32,
-    pub horizontal_alignment: HorizontalAlignment,
-    pub vertical_alignment: VerticalAlignment,
-}
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub enum HorizontalAlignment {
-    Left,
-    Middle,
-    Right,
-}
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub enum VerticalAlignment {
-    Top,
-    Middle,
-    Bottom,
-}
 
 // ahh shit, we could do blending ...
 pub type Bitmap = image::RgbaImage;

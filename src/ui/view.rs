@@ -47,22 +47,10 @@ impl<'a, Ev> Iterator for ViewIterator<'a, Ev> {
     }
 }
 
-fn count<Ev>(view: &View<Ev>) -> u32 {
-    let mut total = 1;
-    for v in &view.sub_views {
-        total += count(v);
-    }
-    total
-}
+//pub struct ElementIterator<'a, Ev> where Ev: 'a {
+//    queue : Vec<(&'a, View<Ev>>
+//}
 
-fn all_elements<Ev>(view: &View<Ev>, elements: &mut Vec<Layer>)  {
-    for l in &view.layers {
-        elements.push(l.clone());
-    }
-    for v in &view.sub_views {
-        all_elements(v, elements);
-    }
-}
 
 
 #[cfg(test)]
@@ -77,6 +65,31 @@ mod tests {
             },
             on_event: None,
             layers : Vec::new(),
+            sub_views: Vec::new(),
+        }
+    }
+
+    pub fn view_with_text(at:Point2I) -> View<()> {
+        let mut layers = Vec::new();
+
+        for i in 0..3 {
+
+            layers.push(Layer {
+                frame: Rect {
+                    min: vec2(0, i * 30),
+                    max: vec2(100, (i + 1) * 30),
+                },
+                content: Element::T,
+            });
+        }
+
+        View {
+            frame : Rect {
+                min: at,
+                max: at + vec2(50, 100),
+            },
+            on_event: None,
+            layers : layers,
             sub_views: Vec::new(),
         }
     }
