@@ -7,7 +7,7 @@ use glium;
 use glutin;
 
 use render::shader::ShaderPair;
-use render::texture_array::{TextureDirectory, TextureArrayDimensions};
+use render::texture_array::{TextureDirectory, TextureArrayDimensions, TextureArrayData};
 
 use input;
 
@@ -47,7 +47,7 @@ pub struct Renderer {
     pub display: glium::Display,
     pub input_state: InputState,
     pub program : Option<Program>,
-    pub texture : Option<(SrgbTexture2dArray, TextureArrayDimensions)>,
+    pub texture : Option<(TextureArrayData, SrgbTexture2dArray)>,
     pub last_dimensions : Dimensions,
     pub fonts: Vec<LoadedBitmapFont>,
 }
@@ -130,7 +130,7 @@ impl Renderer {
     }
 
     pub fn texture_array_dimensions(&self) -> Option<TextureArrayDimensions> {
-       self.texture.as_ref().map(|&(_, d)| d )
+       self.texture.as_ref().map(|&(ref d, _)| d.dimensions )
     }
 
     pub fn clear_fonts(&mut self) {
@@ -160,12 +160,20 @@ impl Renderer {
             let texture_load_result = self.texture_directory.load().and_then(|mut texture_data| {
                 for loaded_font in &self.fonts {
                     println!("copying in font -> {:?} to texture array",loaded_font.font.description);
-                    texture_data.data.push(loaded_font.image.clone().into_raw());
+                    texture_data.images.push(loaded_font.image.clone());
+                    texture_data.dimensions.layers += 1;
                 }
-                let mut dimensions = texture_data.dimensions;
-                dimensions.layers += self.fonts.len() as u32;
-                texture_data.load(&self.display).map(|t| (t, dimensions))
+                texture_data.load(&self.display).map(|texture| (texture_data, texture))
             });
+
+
+
+
+
+
+
+
+            // .load(&self.display).map(|t| (t, dimensions))
             println!("texture load result -> {:?}", texture_load_result);
             self.texture = texture_load_result.ok();
         }
@@ -199,14 +207,14 @@ impl Renderer {
     }
 
     pub fn render<'b>(&'b self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
-        if let (&Some(ref pr), &Some((ref tr, _))) = (&self.program, &self.texture) {
+        if let (&Some(ref pr), &Some((_, ref texture))) = (&self.program, &self.texture) {
             let mut frame = self.display.draw(); 
             frame.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
             Ok(RenderFrame {
                 display: &self.display,
                 frame: frame,
                 program: pr,
-                texture: tr,
+                texture: texture,
             })
             
 

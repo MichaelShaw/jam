@@ -2,9 +2,8 @@ use std::fs;
 use std::path::{Path,PathBuf};
 
 use image;
-use image::GenericImage;
+use image::{GenericImage, RgbaImage};
 use std::fmt;
-
 use aphid::HashSet;
 
 use JamResult;
@@ -25,7 +24,7 @@ impl TextureDirectory {
     }
 
     pub fn load(&self) -> JamResult<TextureArrayData> {
-        let mut file_data : Vec<Vec<u8>> = Vec::new();
+        let mut images : Vec<RgbaImage> = Vec::new();
 
         let mut dimensions : Option<Dimensions> = None;
 
@@ -52,10 +51,8 @@ impl TextureDirectory {
                     } else {
                         dimensions = Some((w, h));
                     }
-                    
-                    let image_buffer = img.to_rgba().into_raw();
-                    
-                    file_data.push(image_buffer);
+
+                    images.push(img.to_rgba());
                 }
             }
         }
@@ -65,9 +62,9 @@ impl TextureDirectory {
                 dimensions: TextureArrayDimensions { 
                     width: w,
                     height: h,
-                    layers: file_data.len() as u32,
+                    layers: images.len() as u32,
                 },
-                data: file_data,
+                images: images,
             })
         } else {
             Err(JamError::NoFiles)
@@ -100,14 +97,15 @@ pub fn read_directory_paths(path:&Path) -> JamResult<Vec<PathBuf>> {
 type Dimensions = (u32, u32); // rename this as TextureDimensions?
 
 // hrm, we currently load it all in to ram in uncompressed form :-/ zero reason why this isn't streamed in as a whole
+#[derive(Clone)]
 pub struct TextureArrayData {
     pub dimensions : TextureArrayDimensions,
-    pub data: Vec<Vec<u8>>,
+    pub images: Vec<RgbaImage>,
 }
 
 impl fmt::Debug for TextureArrayData {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "TextureArrayData {{  dimensions: {:?}, data: {} }}", self.dimensions, self.data.len())
+        write!(f, "TextureArrayData {{  dimensions: {:?}, data: {} }}", self.dimensions, self.images.len())
     }
 }
 

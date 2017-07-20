@@ -81,6 +81,7 @@ impl App {
         GeometryTesselator::new(tesselator_scale)
     }
 
+    #[allow(unused_variables)]
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
         println!("input -> {:?}", input_state);
     }
@@ -91,7 +92,7 @@ impl App {
 
         let mut frame = self.renderer.render(rgb(132, 193, 255))?;
 
-        let layer = 0;
+//        let layer = 0;
         let scale = 1.0 / self.camera.viewport.scale as f64;
         let texture_region = TextureRegion {
             u_min: 0,
@@ -102,20 +103,6 @@ impl App {
         };
         t.color = color::WHITE.float_raw();
         t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
-
-        let at = Vec2::new(0.0, 400.0);
-        t.color = color::BLACK.float_raw();
-//        text::render_text(
-//            "Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.",
-//            font,
-//            layer,
-//            at,
-//            -1.0, // i assume this is because our coordinate system is hosed ...
-//            scale,
-//            &t,
-//            &mut vertices,
-//            Some(300.0)
-//        );
 
         frame.draw_vertices(&vertices, Uniforms {
             transform : down_size_m4(self.camera.ui_projection().into()),

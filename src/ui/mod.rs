@@ -1,6 +1,22 @@
 pub mod example;
+pub mod component;
+pub mod render;
+pub mod view;
+pub mod event;
 
-use cgmath::Vector2;
+pub use self::view::*;
+pub use self::component::*;
+pub use self::render::*;
+pub use self::event::*;
+
+use Color;
+use cgmath::{Vector2, BaseNum};
+use image;
+
+pub type ZLayer = i32;
+pub type Size2 = Vector2<i32>;
+pub type RectI = Rect<i32>;
+pub type Point2I = Vector2<i32>;
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
 pub struct Rect<F> {
@@ -8,18 +24,30 @@ pub struct Rect<F> {
     pub max : Vector2<F>,
 }
 
+impl<F> Rect<F> where F: BaseNum {
+    pub fn offset(&self, v:&Vector2<F>) -> Rect<F> {
+        Rect {
+            min: self.min + v,
+            max: self.max + v,
+        }
+    }
 
-// how do we do layout!?
-// views need to layout their elements ....
-// and subviews ....
-
-// to render something
-// render :: BaseImage -> Rect -> Element -> BaseImage //
-
-pub struct View<Ev> {
-    pub content: Vec<Element>,
-    pub on_event: Box<Fn(MouseEvent) -> Option<Ev>>,
+    pub fn with_size(width: F, height: F) -> Rect<F> {
+        Rect {
+           min: Vector2::new(F::zero(), F::zero()),
+           max: Vector2::new(width, height),
+        }
+    }
 }
+
+// could be "widget behaviour"
+pub trait Widget {
+    type State : Eq;
+    type Event;
+    fn update(st:&Self::State, ev:&Self::Event) -> Self::State;
+    fn view(st:&Self::State) -> View<Self::Event>;
+}
+
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
 pub enum MouseEvent {
@@ -28,6 +56,33 @@ pub enum MouseEvent {
     MouseMove,
     MouseDown,
     MouseUp,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
+pub struct Layer {
+    pub frame: Rect<i32>,
+    pub content: Element,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
+pub enum Element {
+    Text(Text),
+    Image(ImageSource),
+}
+
+#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
+pub struct ImageSource {
+    pub layer: i32,
+    pub rect: Rect<i32>,
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
+pub struct Text {
+    pub characters : String,
+    pub color: Color,
+    pub size: i32,
+    pub horizontal_alignment: HorizontalAlignment,
+    pub vertical_alignment: VerticalAlignment,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
@@ -44,30 +99,10 @@ pub enum VerticalAlignment {
     Bottom,
 }
 
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub struct Text {
-    pub characters : String,
-    pub size: i32,
-    pub horizontal_alignment: HorizontalAlignment,
-    pub vertical_alignment: VerticalAlignment,
-}
-
-#[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]
-pub struct ImageSource {
-    pub layer: i32,
-    pub rect: Rect<i32>,
-}
-
-#[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub enum Element {
-    Text(Text),
-    Image(ImageSource),
-}
-
-// could be "widget behaviour"
-pub trait Widget<St, Ev> where St: Eq {
-    fn update(st:St, ev:&Ev) -> St;
-    fn view(st:&St) -> View<Ev>;
+// ahh shit, we could do blending ...
+pub type Bitmap = image::RgbaImage;
+pub trait Rasterable {
+    fn raster(&self, image: &mut Bitmap, target: Rect<i32>);
 }
 
 // events .... mouse down, mouse up, move over (seems reasonable)
