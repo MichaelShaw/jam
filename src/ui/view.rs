@@ -14,7 +14,7 @@ pub struct View<Ev> {
 
 impl<Ev> fmt::Debug for View<Ev> {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "View {{ frame: {:?}, layers: {:?} sub_view: {:?} }}", self.frame, self.layers, self.sub_views)
+        write!(f, "View {{ frame: {:?}, layers: {:?} sub_view: {:?} }}", self.frame, self.layers.len(), self.sub_views.len())
     }
 }
 
@@ -136,7 +136,11 @@ mod tests {
     fn view_iterator() {
         let mut v = empty_view(vec2(100, 100));
         for i in 0..3 {
-            v.sub_views.push(empty_view(vec2(10 * i, 10)));
+            let mut nv = empty_view(vec2(100 * i, 10));
+            for j in 0..2 {
+                nv.sub_views.push(empty_view(vec2(0, 30 * i)));
+            }
+            v.sub_views.push(nv);
         }
 
         println!("====== VIEWS =======");
