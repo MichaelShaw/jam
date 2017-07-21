@@ -10,6 +10,6 @@ pub enum MouseEvent {
     MouseUp,
 }
 
-pub fn events<Ev>(last_input: &InputState, input: &InputState, view: View<Ev>) -> Vec<Ev> {
+pub fn events<Ev>(input: &InputState, last_input: &Option<InputState>, view: &View<Ev>) -> Vec<Ev> {
     Vec::new()
 }

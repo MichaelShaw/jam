@@ -1,5 +1,5 @@
 
-
+use cgmath::vec2;
 use super::{MouseEvent, View, Rect, ImageSource};
 
 pub fn button<Ev, F>(frame: Rect<i32>,
@@ -29,7 +29,7 @@ pub enum MyEvent {
 pub fn button_me() {
     let icon = ImageSource {
         layer: 0,
-        rect: Rect::with_size(100, 100),
+        rect: Rect::with_size(vec2(100, 100)),
     };
-    let x : View<MyEvent> = button(Rect::with_size(100, 100), "sup".into(), icon, || { Some(MyEvent::Click) });
+    let x : View<MyEvent> = button(Rect::with_size(vec2(100, 100)), "sup".into(), icon, || { Some(MyEvent::Click) });
 }

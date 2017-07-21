@@ -13,6 +13,8 @@ use cgmath::Rad;
 use std::f64::consts::PI;
 use Dimensions;
 
+use ui::*;
+
 pub fn run() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
@@ -35,6 +37,7 @@ pub fn run() {
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
+        widget_runner: WidgetRunner::new(ExampleWidget {}, ExampleState::sample()),
         geometry: HashMap::default(),
     };
     app.run()
@@ -47,7 +50,8 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer:Renderer,
+    renderer : Renderer,
+    widget_runner: WidgetRunner<ExampleWidget>,
     geometry : HashMap<String, GeometryBuffer>,
 }
 
@@ -83,6 +87,8 @@ impl App {
 
     #[allow(unused_variables)]
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
+        self.widget_runner.run(input_state.clone(), Vec::new());
+
         println!("input -> {:?}", input_state);
     }
 
@@ -112,5 +118,52 @@ impl App {
         frame.finish();
 
         Ok(())
+    }
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub enum ExampleEvent {
+
+}
+
+#[derive(Clone, PartialEq, Eq, Debug)]
+pub struct ExampleState {
+    score_a: u32,
+    score_b: u32,
+    period: u32,
+    time_remaining:String,
+    play_status: String,
+}
+
+impl ExampleState {
+    pub fn sample() -> ExampleState {
+        ExampleState {
+            score_a: 0,
+            score_b: 1,
+            period: 1,
+            time_remaining: "5:00".into(),
+            play_status: "Faceoff in 0:00".into(),
+        }
+    }
+}
+
+pub struct ExampleWidget {
+
+}
+
+impl Widget for ExampleWidget {
+    type State = ExampleState;
+    type Event = ExampleEvent;
+
+    fn update(&self, state:&ExampleState, ev:&ExampleEvent) -> ExampleState {
+        state.clone()
+    }
+
+    fn view(&self, state:&ExampleState) -> View<ExampleEvent> {
+        let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 100)));
+        for i in 0..3 {
+            view.sub_views.push(label_view(RectI::new(vec2(i * 100, 0), vec2(100, 100)), format!("awesome_{}", i)));
+        }
+        view
     }
 }

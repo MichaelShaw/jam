@@ -42,14 +42,21 @@ pub struct Renderer {
     pub shader_pair : ShaderPair,
     pub texture_directory: TextureDirectory,
     pub font_directory: FontDirectory,
+
     pub resource_file_watcher : RecommendedWatcher,
     pub resource_file_change_events: Receiver<RawEvent>,
-    pub display: glium::Display,
+
     pub input_state: InputState,
+    pub last_dimensions : Dimensions,
+
+    pub display: glium::Display,
     pub program : Option<Program>,
     pub texture : Option<(TextureArrayData, SrgbTexture2dArray)>,
-    pub last_dimensions : Dimensions,
+
+
     pub fonts: Vec<LoadedBitmapFont>,
+
+    // do we build in a ui cache?
 }
 
 fn dimensions_for(display : &glium::Display) -> Dimensions {
@@ -183,6 +190,7 @@ impl Renderer {
         self.load_resources();
 
         let events : Vec<glutin::Event> = self.display.poll_events().collect();
+
         self.input_state = input::produce(&self.input_state, &events);
 
         let new_dimensions = dimensions_for(&self.display);
@@ -269,9 +277,6 @@ impl<'a> RenderFrame<'a> {
         self.frame.draw(&geometry.vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), self.program, &u, &bl).unwrap();
     }
 }
-
-// do we _really_ need a pass abstraction .... let's at least not race to it..
-
 
 pub fn check_reload(rx: &Receiver<RawEvent>, shader_pair:&ShaderPair, texture_directory: &TextureDirectory) -> (bool, bool) {
     let mut reload_program = false;

@@ -89,6 +89,29 @@ impl<'a, Ev> Iterator for LayerIterator<'a, Ev> {
     }
 }
 
+pub fn empty_view<Ev>(frame:RectI) -> View<Ev> {
+    View {
+        frame: frame,
+        on_event: None,
+        layers : Vec::new(),
+        sub_views: Vec::new(),
+    }
+}
+
+
+pub fn label_view<Ev>(frame:RectI, text:String) -> View<Ev> {
+    let layer = Layer {
+        frame: RectI::with_size(frame.size()),
+        content: Element::Text(Text::new(text))
+    };
+    View {
+        frame: frame,
+        on_event: None,
+        layers : vec![layer],
+        sub_views: Vec::new(),
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
