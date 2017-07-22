@@ -7,17 +7,6 @@ use InputState;
 
 use ui::{self, RectI, ZLayer, Widget, Size2, Point2I};
 
-// ok how do we render ...
-// we have our own textures
-
-
-
-
-
-//        for (l, rect, (v_z, l_z)) in view.layer_iter() {
-//
-//        }
-
 pub struct WidgetRunner<W> where W : Widget {
     widget: W,
     state: W::State,
@@ -26,6 +15,10 @@ pub struct WidgetRunner<W> where W : Widget {
 }
 
 impl<W> WidgetRunner<W> where W : Widget {
+    pub fn view(&self) -> &View<W::Event> {
+        &self.view
+    }
+
     pub fn new(widget: W, initial_state: W::State) -> WidgetRunner<W> {
         let view = widget.view(&initial_state);
         WidgetRunner {
@@ -50,10 +43,12 @@ impl<W> WidgetRunner<W> where W : Widget {
             println!("applying event -> {:?}", ev);
             let new_state = self.widget.update(&self.state, &ev);
             if new_state != self.state {
+                println!("state modified!");
                 state_modified = true;
             }
         }
         if state_modified {
+            println!("regenerating view");
             self.view = self.widget.view(&self.state);
         }
     }

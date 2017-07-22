@@ -6,8 +6,8 @@ use glium::index;
 use glium;
 use glutin;
 
-use render::shader::ShaderPair;
-use render::texture_array::{TextureDirectory, TextureArrayDimensions, TextureArrayData};
+use render::*;
+
 
 use input;
 
@@ -15,8 +15,6 @@ use input::InputState;
 use color::Color;
 
 use glium::texture::srgb_texture2d_array::SrgbTexture2dArray;
-
-use render::command::{Uniforms, Blend};
 
 use std::sync::mpsc::{channel, Receiver};
 
@@ -26,9 +24,15 @@ use super::window;
 use super::program;
 
 use dimensions::Dimensions;
-use render::vertex::Vertex;
 
 use font::*;
+
+use camera;
+use color;
+use ui;
+use ui::View;
+
+use cgmath::vec3;
 
 use {JamResult, JamError};
 
@@ -53,6 +57,8 @@ pub struct Renderer {
     pub program : Option<Program>,
     pub texture : Option<(TextureArrayData, SrgbTexture2dArray)>,
 
+    // ui cache
+    pub ui_texture: Option<SrgbTexture2dArray>,
 
     pub fonts: Vec<LoadedBitmapFont>,
 
@@ -93,6 +99,7 @@ impl Renderer {
             input_state: InputState::default(),
             program : None,
             texture : None,
+            ui_texture: None,
             last_dimensions : dimensions,
             fonts: Vec::new(),
         })
@@ -173,13 +180,6 @@ impl Renderer {
                 texture_data.load(&self.display).map(|texture| (texture_data, texture))
             });
 
-
-
-
-
-
-
-
             // .load(&self.display).map(|t| (t, dimensions))
             println!("texture load result -> {:?}", texture_load_result);
             self.texture = texture_load_result.ok();
@@ -214,8 +214,8 @@ impl Renderer {
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render<'b>(&'b self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
-        if let (&Some(ref pr), &Some((_, ref texture))) = (&self.program, &self.texture) {
+    pub fn render<'b>(&'b mut self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
+        if let (&Some(ref pr), &mut Some((_, ref mut texture))) = (&self.program, &mut self.texture) {
             let mut frame = self.display.draw(); 
             frame.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
             Ok(RenderFrame {
@@ -223,10 +223,8 @@ impl Renderer {
                 frame: frame,
                 program: pr,
                 texture: texture,
+                dimensions: self.last_dimensions,
             })
-            
-
-            // frame.finish().map_err(JamError::SwapBufferError)
         } else {
             Err(JamError::RenderingPipelineIncomplete)
         }
@@ -238,11 +236,12 @@ pub struct RenderFrame<'a> {
     pub display: &'a glium::Display,
     pub program: &'a Program,
     pub texture: &'a glium::texture::SrgbTexture2dArray,
+    pub dimensions: Dimensions,
 }
 
 impl<'a> RenderFrame<'a> {
-    pub fn finish(self) {
-        self.frame.finish().unwrap()
+    pub fn finish(self) -> JamResult<()> {
+        self.frame.finish().map_err(JamError::SwapBufferError)
     }
 
     pub fn clear_depth(&mut self) {
@@ -275,6 +274,43 @@ impl<'a> RenderFrame<'a> {
         let bl = program::draw_params_for_blend(blend);
 
         self.frame.draw(&geometry.vertex_buffer, &index::NoIndices(index::PrimitiveType::TrianglesList), self.program, &u, &bl).unwrap();
+    }
+
+    pub fn draw_view<Ev>(&mut self, view:&View<Ev>) { // transform?
+        println!("draw view");
+        let mut vertices : Vec<Vertex> = Vec::new();
+
+        let t = GeometryTesselator::new(vec3(1.0, 1.0, 1.0));
+//        draw_ui(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, scale: f64)
+
+//        let texture_region = TextureRegion {
+//            pub u_min: u32,
+//            pub u_max: u32,
+//            pub v_min: u32,
+//            pub v_max: u32,
+//            pub texture_size: u32,
+//        };
+        let scale = 1.0;
+        for (l, rect_abs, (v_z, l_z)) in view.layer_iter() {
+            let z = v_z as f64 * 1.0 + l_z as f64 * 0.1;
+
+//            t.draw_ui(&mut vertices, tr:&TextureRegion, layer: u32, x:f64, y:f64, z, scale);
+        }
+
+        let tex = self.texture.sampled().magnify_filter(glium::uniforms::MagnifySamplerFilter::Nearest);
+
+        let (pixels_wide, pixels_high) = self.dimensions.pixels;
+
+        let transform = camera::ui_projection(pixels_wide as f64, pixels_high as f64);
+        let u = uniform! {
+            u_matrix: down_size_m4(transform.into()),
+            u_texture_array: tex,
+            u_color: color::WHITE.float_raw(),
+            u_alpha_minimum: 0.01_f32,
+        };
+        let vbo = VertexBuffer::persistent(self.display, &vertices).unwrap();
+        let bl = program::draw_params_for_blend(Blend::None);
+        self.frame.draw(&vbo, &index::NoIndices(index::PrimitiveType::TrianglesList), self.program, &u, &bl).unwrap();
     }
 }
 

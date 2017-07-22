@@ -191,6 +191,7 @@ impl GeometryTesselator {
         ]);
     }
 
+    // should we move scale to ui_scale ....
     pub fn draw_ui(&self, vertices: &mut Vec<Vertex>, tr:&TextureRegion, layer: u32, x:f64, y:f64, z:f64, scale: f64) {
         let layer_f = layer as f32;
         let ww = (tr.width() as f64) * scale;

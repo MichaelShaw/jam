@@ -38,7 +38,6 @@ pub fn run() {
         n: 0, // frame counter
         renderer: renderer,
         widget_runner: WidgetRunner::new(ExampleWidget {}, ExampleState::sample()),
-        geometry: HashMap::default(),
     };
     app.run()
 }
@@ -52,7 +51,6 @@ struct App {
     n : u64,
     renderer : Renderer,
     widget_runner: WidgetRunner<ExampleWidget>,
-    geometry : HashMap<String, GeometryBuffer>,
 }
 
 impl App {
@@ -88,8 +86,6 @@ impl App {
     #[allow(unused_variables)]
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
         self.widget_runner.run(input_state.clone(), Vec::new());
-
-        println!("input -> {:?}", input_state);
     }
 
     fn render(&mut self) -> JamResult<()> {
@@ -114,6 +110,8 @@ impl App {
             transform : down_size_m4(self.camera.ui_projection().into()),
             color: color::WHITE,
         }, Blend::Alpha);
+
+        frame.draw_view(self.widget_runner.view());
 
         frame.finish();
 
@@ -160,10 +158,13 @@ impl Widget for ExampleWidget {
     }
 
     fn view(&self, state:&ExampleState) -> View<ExampleEvent> {
-        let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 100)));
-        for i in 0..3 {
-            view.sub_views.push(label_view(RectI::new(vec2(i * 100, 0), vec2(100, 100)), format!("awesome_{}", i)));
-        }
+        let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 140)));
+
+        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(100, 100)), format!("{}", state.score_a )));
+        view.sub_views.push(label_view(RectI::new(vec2(100, 0), vec2(100, 100)), format!("{}", state.score_b )));
+        view.sub_views.push(label_view(RectI::new(vec2(200, 0), vec2(100, 100)), format!("P{} {}", state.period, state.time_remaining)));
+        view.sub_views.push(label_view(RectI::new(vec2(0, 100), vec2(300, 40)), state.play_status.clone()));
+
         view
     }
 }
