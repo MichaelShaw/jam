@@ -29,7 +29,7 @@ pub fn run() {
             pitch: Rad(PI / 4.0_f64),
             viewport: Dimensions {
                 pixels: (800,600),
-                scale: 1.0,
+                points: (800,600),
             },
             points_per_unit: 16.0 * 1.0,
         },
@@ -95,7 +95,7 @@ impl App {
         let mut frame = self.renderer.render(rgb(132, 193, 255))?;
 
 //        let layer = 0;
-        let scale = 1.0 / self.camera.viewport.scale as f64;
+        let scale = 1.0 / self.camera.viewport.scale() as f64;
         let texture_region = TextureRegion {
             u_min: 0,
             u_max: 128,

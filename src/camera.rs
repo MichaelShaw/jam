@@ -18,7 +18,7 @@ pub struct Camera {
 impl Camera {
     // UI
     pub fn ui_projection(&self) -> Mat4 {
-        let (points_wide, points_high) = self.viewport.points();
+        let (points_wide, points_high) = self.viewport.points;
         ui_projection(points_wide as f64, points_high as f64)
     }
 
@@ -32,8 +32,8 @@ impl Camera {
     }
 
     pub fn projection(&self) -> Mat4 {
-        let (points_wide, points_high) = self.viewport.points();
-        projection(points_wide, points_high, self.points_per_unit)
+        let (points_wide, points_high) = self.viewport.points;
+        projection(points_wide as f64, points_high as f64, self.points_per_unit)
     }
 
     pub fn units_per_point(&self) -> f64 {
@@ -58,8 +58,8 @@ impl Camera {
     pub fn ui_line_segment_for_mouse_position(&self, x:i32, y:i32) -> Option<(f64, f64)> {
         let (pixels_wide, pixels_high) = self.viewport.pixels;
         if x > 0 && y > 0 && x < pixels_wide as i32 && y < pixels_high as i32 {
-            let point_x = x as f64 / self.viewport.scale;
-            let point_y = (pixels_high as i32 - y) as f64 / self.viewport.scale;
+            let point_x = x as f64 / self.viewport.scale();
+            let point_y = (pixels_high as i32 - y) as f64 / self.viewport.scale();
             Some((point_x, point_y))
         } else {
             None

@@ -57,8 +57,17 @@ pub struct InputState {
 }
 
 pub fn is_close_event(event: &glutin::Event) -> bool {
+    use glutin::Event;
+    use glutin::WindowEvent;
+    use glutin::KeyboardInput;
+//    glutin::WindowEvent::KeyboardInput {}
     match event {
-        &glutin::Event::KeyboardInput(_, _, Some(glutin::VirtualKeyCode::Escape)) | &glutin::Event::Closed => true,
+        &Event::WindowEvent { event: WindowEvent::Closed , .. } => true,
+        &Event::WindowEvent {
+            event: WindowEvent::KeyboardInput {
+                input: KeyboardInput { virtual_keycode: Some(glutin::VirtualKeyCode::Escape), ..}
+                , .. },
+            ..} => true,
         _ => false,
     }
 }
@@ -77,47 +86,60 @@ pub fn produce(input:&InputState, events: &Vec<glutin::Event>) -> InputState {
         if is_close_event(&event) {
             next_input.close = true;
         }
+        use glutin::{Event, WindowEvent, KeyboardInput, ElementState};
+
         match event {
-            &glutin::Event::KeyboardInput(element_state, _, Some(key_code)) => 
-                match element_state {
-                    glutin::ElementState::Pressed => {
-                        let was_down = next_input.keys.down.contains(&key_code);
-                        next_input.keys.down.insert(key_code);
-                        if !was_down {
-                            next_input.keys.pushed.insert(key_code);
+            &Event::WindowEvent { ref event, .. } => {
+                match event {
+                    &WindowEvent::Resized(width, height) => {},
+                    &WindowEvent::KeyboardInput { input: KeyboardInput { virtual_keycode: Some(key_code), state, .. }, .. } => {
+                        match state {
+                            ElementState::Pressed => {
+                                let was_down = next_input.keys.down.contains(&key_code);
+                                next_input.keys.down.insert(key_code);
+                                if !was_down {
+                                    next_input.keys.pushed.insert(key_code);
+                                }
+                            },
+                            ElementState::Released => {
+                                let was_down = next_input.keys.down.contains(&key_code);
+                                next_input.keys.down.remove(&key_code);
+                                if !was_down {
+                                    next_input.keys.released.insert(key_code);
+                                }
+                            },
                         }
                     },
-                    glutin::ElementState::Released => {
-                        let was_down = next_input.keys.down.contains(&key_code);
-                        next_input.keys.down.remove(&key_code);
-                        if !was_down {
-                            next_input.keys.released.insert(key_code);
+                    &WindowEvent::MouseInput { state, button, .. } => {
+                        match state {
+                            ElementState::Pressed => {
+                                let was_down = next_input.mouse.down.contains(&button);
+                                next_input.mouse.down.insert(button);
+                                if !was_down {
+                                    next_input.mouse.pushed.insert(button);
+                                }
+                            },
+                            ElementState::Released => {
+                                let was_down = next_input.mouse.down.contains(&button);
+                                next_input.mouse.down.remove(&button);
+                                if was_down {
+                                    next_input.mouse.released.insert(button);
+                                }
+                            },
                         }
+                    },
+                    &WindowEvent::MouseWheel { delta, .. } => {
+                        println!("mouse delta -> {:?}", delta);
+//                        next_input.mouse.mouse_wheel_delta += (delta * 100.0) as i32;
+                    },
+                    &WindowEvent::MouseMoved { position: (x, y), .. } => {
+                        next_input.mouse.at = (x as i32, y as i32);
                     }
-                },
-            &glutin::Event::MouseWheel(glutin::MouseScrollDelta::LineDelta(_, mouse_scroll_delta), _) => {
-                next_input.mouse.mouse_wheel_delta += (mouse_scroll_delta * 100.0) as i32;
+                    _ => (),
+                }
             },
-            &glutin::Event::MouseInput(element_state, mouse_button) =>
-                match element_state {
-                    glutin::ElementState::Pressed => {
-                        let was_down = next_input.mouse.down.contains(&mouse_button);
-                        next_input.mouse.down.insert(mouse_button);
-                        if !was_down {
-                            next_input.mouse.pushed.insert(mouse_button);
-                        }
-                    },
-                    glutin::ElementState::Released => {
-                        let was_down = next_input.mouse.down.contains(&mouse_button);
-                        next_input.mouse.down.remove(&mouse_button);
-                        if was_down {
-                            next_input.mouse.released.insert(mouse_button);
-                        }
-                    },
-                },
-            &glutin::Event::MouseMoved(x, y) => next_input.mouse.at = (x, y),
             _ => (),
-        };
+        }
     }
 
     next_input

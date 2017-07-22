@@ -55,7 +55,7 @@ pub enum JamError {
     TextureLoadError(glium::texture::TextureCreationError),
     FontLoadError(font::FontLoadError),
     ImageError(image::ImageError),
-    WindowCreationError(glium::GliumCreationError<glutin::CreationError>),
+    WindowCreationError(glium::backend::glutin::DisplayCreationError),
     SwapBufferError(glium::SwapBuffersError),
     MustLoadTextureBeforeFont,
     NoFiles,

@@ -4,9 +4,9 @@ version = "0.1.0"
 authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 
 [dependencies]
-glium = "0.16"
-glutin = "0.7"
-image = "0.13"
+glium = "0.17"
+glutin = "0.9"
+image = "0.14"
 cgmath = "0.14"
 notify = "3.0"
 time = "0.1"

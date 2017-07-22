@@ -48,7 +48,7 @@ fn main() {
             pitch: Rad(PI / 4.0_f64),
             viewport: Dimensions { 
                 pixels: (800,600),
-                scale: 1.0,
+                points: (800,600),
             },
             points_per_unit: 16.0 * 1.0,
         },
@@ -124,7 +124,7 @@ impl App {
     fn render(&mut self) -> JamResult<()> {
         use jam::font::FontDescription;
         
-        let font_description = FontDescription { family: "Roboto-Medium".into(), pixel_size: (32f64 * self.camera.viewport.scale) as u32 };
+        let font_description = FontDescription { family: "Roboto-Medium".into(), pixel_size: (32f64 * self.camera.viewport.scale()) as u32 };
         let loaded = self.renderer.load_font(&font_description);
         match loaded {
             Err(e) => println!("font load error -> {:?}", e),
@@ -210,7 +210,7 @@ impl App {
 
         if let Some((font, layer)) = self.renderer.get_font(&font_description) {
             // println!("ok we got a font to use to draw layer -> {:?}", layer);
-            let scale = 1.0 / self.camera.viewport.scale as f64;
+            let scale = 1.0 / self.camera.viewport.scale();
             let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
 
             let texture_region = TextureRegion {

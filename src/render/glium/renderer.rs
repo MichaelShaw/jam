@@ -51,9 +51,10 @@ pub struct Renderer {
     pub resource_file_change_events: Receiver<RawEvent>,
 
     pub input_state: InputState,
-    pub last_dimensions : Dimensions,
+    pub dimensions: Dimensions,
 
     pub display: glium::Display,
+    pub events_loop: glutin::EventsLoop,
     pub program : Option<Program>,
     pub texture : Option<(TextureArrayData, SrgbTexture2dArray)>,
 
@@ -66,13 +67,12 @@ pub struct Renderer {
 }
 
 fn dimensions_for(display : &glium::Display) -> Dimensions {
-    let (width_pixels, height_pixels) = display.get_framebuffer_dimensions();
-
-    let scale : f64 = display.get_window().map(|w| w.hidpi_factor() as f64).unwrap_or(1.0);
+    let pixels = display.gl_window().get_inner_size_pixels().unwrap_or((100, 100));
+    let points = display.gl_window().get_inner_size_points().unwrap_or((100, 100));
 
     Dimensions {
-        pixels: (width_pixels, height_pixels),
-        scale: scale,
+        pixels: pixels,
+        points: points,
     }  
 }
 
@@ -85,7 +85,7 @@ impl Renderer {
         resource_file_watcher.watch(&shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
         resource_file_watcher.watch(&texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");
 
-        let display = window::create_window(&window_name, vsync, initial_dimensions)?;
+        let (events_loop, display) = window::create_window(&window_name, vsync, initial_dimensions)?;
         
         let dimensions = dimensions_for(&display);
 
@@ -96,11 +96,12 @@ impl Renderer {
             resource_file_watcher : resource_file_watcher,
             resource_file_change_events: notifier_rx,
             display: display,
+            events_loop: events_loop,
             input_state: InputState::default(),
             program : None,
             texture : None,
             ui_texture: None,
-            last_dimensions : dimensions,
+            dimensions : dimensions,
             fonts: Vec::new(),
         })
     }
@@ -189,33 +190,24 @@ impl Renderer {
     pub fn begin(&mut self) -> (Dimensions, InputState) {
         self.load_resources();
 
-        let events : Vec<glutin::Event> = self.display.poll_events().collect();
+
+        let mut events : Vec<glutin::Event> = Vec::new();
+
+        self.events_loop.poll_events(|ev| events.push(ev));
+
 
         self.input_state = input::produce(&self.input_state, &events);
 
         let new_dimensions = dimensions_for(&self.display);
 
-        if new_dimensions != self.last_dimensions { // this is a fix for Glutin/WINIT, when changing windows with different scales it does (but same points size), it won't properly resize
-            println!("resize detected from {:?} to {:?}", self.last_dimensions, new_dimensions);
-            if Dimensions::approx_equal_point_size(new_dimensions, self.last_dimensions)  {
-                println!("missed resize case detected");
-                if let Some(window) = self.display.get_window() {
-                    if let Some((w, h)) = window.get_inner_size_points() {
-                        println!("jiggling a little");
-                        window.set_inner_size(w+1, h);
-                        window.set_inner_size(w, h);
-                    }
-                }    
-            }
-           
-            self.last_dimensions = new_dimensions;
-        }
-
         (new_dimensions, self.input_state.clone())
     }
 
-    pub fn render<'b>(&'b mut self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
-        if let (&Some(ref pr), &mut Some((_, ref mut texture))) = (&self.program, &mut self.texture) {
+//    pub fn render<'b>(&'b mut self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
+//        if let (&Some(ref pr), &mut Some((_, ref mut texture))) = (&self.program, &mut self.texture) {
+
+    pub fn render<'b>(&'b self, clear_color: Color) -> JamResult<RenderFrame<'b>> {
+        if let (&Some(ref pr), &Some((_, ref texture))) = (&self.program, &self.texture) {
             let mut frame = self.display.draw(); 
             frame.clear_color_srgb_and_depth(clear_color.float_tup(), 1.0);
             Ok(RenderFrame {
@@ -223,7 +215,7 @@ impl Renderer {
                 frame: frame,
                 program: pr,
                 texture: texture,
-                dimensions: self.last_dimensions,
+                dimensions: self.dimensions,
             })
         } else {
             Err(JamError::RenderingPipelineIncomplete)
