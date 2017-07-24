@@ -3,18 +3,24 @@ use glutin;
 use gfx_device_gl;
 
 use gfx::format::Rgba8;
+use gfx::Device;
 use gfx::traits::FactoryExt;
+use gfx_window_glutin;
 
-use super::{ColorFormat, DepthFormat};
+use Color;
+
+use super::{Vertex, ColorFormat, DepthFormat, GeometryBuffer, Locals};
 use super::{pipe_blend, pipe_opaque, get_dimensions};
 
-use {input, JamError};
-use render::{FileResources, FileWatcher, TextureArrayDimensions};
+use {input, JamError, JamResult};
+use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend};
 use font::FontDirectory;
 use {Dimensions, InputState};
+use glutin::GlContext;
 
 use notify::{RawEvent};
 use std::sync::mpsc::{Receiver};
+
 
 pub type OpenGLRenderer = Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, gfx_device_gl::Factory, gfx_device_gl::Device>;
 
@@ -61,20 +67,58 @@ pub struct BlendPipeline<R> where R : gfx::Resources {
     pub data : Option<pipe_blend::Data<R>>,
 }
 
-impl<R, C, F, D> Renderer<R, C, F, D> where R : gfx::Resources,
-                                            C : gfx::CommandBuffer<R>,
-                                            F : gfx::Factory<R>,
-                                            D : gfx::Device {
-    pub fn begin(&mut self) -> (Dimensions, InputState) {
+impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_device_gl::Device> where F : gfx::Factory<gfx_device_gl::Resources> {
+    pub fn begin_frame(&mut self, clear_color: Color) -> (Dimensions, InputState) {
         self.load_resources();
 
         let mut events : Vec<glutin::Event> = Vec::new();
 
         self.events_loop.poll_events(|ev| events.push(ev));
 
+        let mut close_requested = false;
+        let mut resize = false;
+
+        for ev in &events {
+            if let &glutin::Event::WindowEvent { ref event, .. } = ev {
+                match event {
+                    &glutin::WindowEvent::KeyboardInput {
+                        input: glutin::KeyboardInput {
+                            virtual_keycode: Some(glutin::VirtualKeyCode::Escape),
+                            ..
+                        },
+                        ..
+                    } => {
+                        close_requested = true
+                    },
+                    &glutin::WindowEvent::Closed => {
+                        close_requested = true
+                    },
+                    &glutin::WindowEvent::Resized(width, height) => {
+                        resize = true;
+                    },
+                    _ => (),
+                }
+            }
+        }
+
+        if resize {
+            println!("resize, PRE -> {:?}", get_dimensions(&self.window));
+            gfx_window_glutin::update_views(&self.window, &mut self.screen_colour_target, &mut self.screen_depth_target);
+            println!("POST -> {:?}", get_dimensions(&self.window));
+        }
+
         self.input_state = input::produce(&self.input_state, &events);
+        self.input_state.close = close_requested;
 
         let dimensions = get_dimensions(&self.window);
+
+        // clear
+        if !close_requested {
+            self.encoder.clear(&self.screen_colour_target, clear_color.float_raw());
+            self.encoder.clear_depth(&self.screen_depth_target, 1.0);
+//            let ad = self.screen_colour_target.get_dimensions();
+//            println!("internal dimensions -> {:?}", ad);
+        }
 
         (dimensions, self.input_state.clone())
     }
@@ -116,6 +160,7 @@ impl<R, C, F, D> Renderer<R, C, F, D> where R : gfx::Resources,
         }
 
         if reload_texture || self.texture.is_none() {
+            println!("LOAD TEXTURES");
             let texture_load_result = self.file_resources.texture_directory.load().and_then(|texture_array_data| {
                 let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| img.clone().into_raw()).collect();
                 let data : Vec<_> = images_raw.iter().map(|v| v.as_slice()).collect();
@@ -135,13 +180,83 @@ impl<R, C, F, D> Renderer<R, C, F, D> where R : gfx::Resources,
             }
         }
     }
-}
 
+    pub fn clear_depth(&mut self) {
+        self.encoder.clear_depth(&self.screen_depth_target, 1.0);
+    }
+
+    pub fn upload(&mut self, vertices: &[Vertex]) -> GeometryBuffer<gfx_device_gl::Resources> {
+        let (buffer, slice) = self.factory.create_vertex_buffer_with_slice(vertices, ());
+        GeometryBuffer {
+            buffer,
+            slice,
+        }
+    }
+
+    pub fn draw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend) -> JamResult<()> {
+        let &(ref t, ref tv) = self.texture.as_ref().ok_or(JamError::NoTexture())?;
+
+//        println!("draw geometry -> {:?}", geometry);
+        match blend {
+            Blend::None => {
+                let opaque_pipe = self.pipelines.as_mut().ok_or(JamError::NoPipeline()).map(|p| &mut p.opaque )?;
+                let opaque_data = pipe_opaque::Data {
+                    vbuf: geometry.buffer.clone(),
+                    texture: (tv.clone(), self.sampler.clone()),
+                    locals: self.factory.create_constant_buffer(1),
+                    out_color: self.screen_colour_target.clone(),
+                    out_depth: self.screen_depth_target.clone(),
+                };
+                let locals = Locals {
+                    u_transform: uniforms.transform,
+                    u_color: uniforms.color.float_raw(),
+                    u_alpha_minimum: 0.01,
+                };
+                self.encoder.update_constant_buffer(&opaque_data.locals, &locals);
+                self.encoder.draw(&geometry.slice, &opaque_pipe.pipeline, &opaque_data);
+            },
+            Blend::Add => {
+//                println!("no add pipeline atm")
+            },
+            Blend::Alpha => {
+                let blend_pipe = self.pipelines.as_mut().ok_or(JamError::NoPipeline()).map(|p| &mut p.blend )?;
+                let blend_data = pipe_blend::Data {
+                    vbuf: geometry.buffer.clone(),
+                    texture: (tv.clone(), self.sampler.clone()),
+                    locals: self.factory.create_constant_buffer(1),
+                    out_color: self.screen_colour_target.clone(),
+                    out_depth: self.screen_depth_target.clone(),
+                };
+                let locals = Locals {
+                    u_transform: uniforms.transform,
+                    u_color: uniforms.color.float_raw(),
+                    u_alpha_minimum: 0.01,
+                };
+                self.encoder.update_constant_buffer(&blend_data.locals, &locals);
+                self.encoder.draw(&geometry.slice, &blend_pipe.pipeline, &blend_data);
+            },
+        }
+
+        Ok(())
+    }
+
+    pub fn draw_vertices(&mut self, vertices: &[Vertex], uniforms: Uniforms, blend:Blend) -> JamResult<GeometryBuffer<gfx_device_gl::Resources>> {
+        let geometry = self.upload(vertices);
+        let res = self.draw(&geometry, uniforms, blend);
+        res.map(|()| geometry)
+    }
+
+    pub fn finish_frame(&mut self) -> JamResult<()> {
+        self.encoder.flush(&mut self.device);
+        self.window.swap_buffers().map_err(JamError::ContextError)?;
+        self.device.cleanup();
+        Ok(())
+    }
+}
 
 pub fn texture_kind_for(dimensions: &TextureArrayDimensions) -> gfx::texture::Kind {
     gfx::texture::Kind::D2Array(dimensions.width as u16, dimensions.height as u16, dimensions.layers as u16, gfx::texture::AaMode::Single)
 }
-
 
 pub fn check_reload(rx: &Receiver<RawEvent>, files:&FileResources) -> (bool, bool) {
     let mut reload_program = false;

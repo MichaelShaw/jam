@@ -19,7 +19,7 @@ pub use self::texture_region::*;
 pub use self::gfx::Vertex;
 
 use font::FontDirectory;
-use notify::{RecommendedWatcher, Watcher, RecursiveMode, RawEvent, FsEventWatcher};
+use notify::{RecommendedWatcher, PollWatcher, Watcher, RecursiveMode, RawEvent, FsEventWatcher};
 use std::sync::mpsc::{channel, Receiver};
 
 
@@ -39,11 +39,10 @@ pub struct FileResources {
     pub shader_pair : ShaderPair,
     pub texture_directory: TextureDirectory,
     pub font_directory: FontDirectory,
-
 }
 
 pub struct FileWatcher {
-    pub watcher : RecommendedWatcher,
+    pub watcher : RecommendedWatcher, // PollWatcher, // ,
     pub change_events: Receiver<RawEvent>,
 }
 
@@ -52,6 +51,7 @@ impl FileResources {
         let (tx, notifier_rx) = channel::<RawEvent>();
 
         let mut resource_file_watcher : RecommendedWatcher = Watcher::new_raw(tx).expect("a watcher");
+//        let mut resource_file_watcher : PollWatcher = PollWatcher::with_delay_ms(tx, 5_000).expect("a watcher");
         resource_file_watcher.watch(&self.shader_pair.vertex_path, RecursiveMode::Recursive).expect("watching shader vertex path");
         resource_file_watcher.watch(&self.shader_pair.fragment_path, RecursiveMode::Recursive).expect("watching shader fragment path");
         resource_file_watcher.watch(&self.texture_directory.path, RecursiveMode::Recursive).expect("watching texture directory path");

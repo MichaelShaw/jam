@@ -42,6 +42,7 @@ gfx_defines! {
 }
 
 
+#[derive(Debug)]
 pub struct GeometryBuffer<R> where R : gfx::Resources {
     pub buffer: gfx::handle::Buffer<R, Vertex>,
     pub slice : gfx::Slice<R>,

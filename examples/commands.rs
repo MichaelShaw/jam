@@ -4,6 +4,7 @@ extern crate cgmath;
 extern crate time;
 extern crate glutin;
 extern crate image;
+extern crate gfx_device_gl;
 
 #[macro_use]
 extern crate aphid;
@@ -15,32 +16,29 @@ use cgmath::Rad;
 
 use aphid::{HashSet, Seconds};
 
-use jam::font::FontDirectory;
-use jam::input::InputState;
-use jam::camera::Camera;
 use jam::color;
-use jam::color::{Color, rgb};
-
-use jam::{Vec3, Vec2, JamResult};
-
-use jam::dimensions::Dimensions;
-
-use jam::render::vertex::Vertex;
-
-use jam::render::command::*;
+use jam::{Vec3, Vec2, JamResult, Dimensions, Color, rgb, Camera, InputState, FontDirectory};
 
 use jam::render::*;
-use jam::render::glium::renderer::{Renderer, GeometryBuffer};
+use jam::render::gfx::{Renderer, GeometryBuffer, OpenGLRenderer, construct_opengl_renderer};
 
 use aphid::HashMap;
+
 
 fn main() {
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), true, "commands example".into()).expect("a renderer");
+    let file_resources = FileResources {
+        shader_pair : shader_pair,
+        texture_directory: texture_dir,
+        font_directory: font_dir,
+    };
 
+    println!("creating renderer");
+    let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "commands example".into()).expect("a renderer");
+    println!("done creating renderer");
     let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
@@ -67,27 +65,30 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer:Renderer,
-    geometry : HashMap<String, GeometryBuffer>,
+    renderer: OpenGLRenderer,
+    geometry : HashMap<String, GeometryBuffer<gfx_device_gl::Resources>>,
 }
 
 impl App {
     fn run(&mut self) {
         let mut last_time = time::precise_time_ns();
         'main: loop {
-            let (dimensions, input_state) = self.renderer.begin();
+            let (dimensions, input_state) = self.renderer.begin_frame(rgb(132, 193, 255));
 
+            if input_state.close {
+                break;
+            }
+
+//            println!("dimensions -> {:?}", dimensions);
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000.0;
 
             self.update(&input_state, dimensions, delta_time);  
 
-            let res = self.render();
+            let res = self.render().expect("successful rendering");
 
             last_time = time;
-            if input_state.close {
-                break;
-            }
+
         }
     }
 
@@ -110,26 +111,28 @@ impl App {
         self.camera.points_per_unit = self.points_per_unit * self.zoom;
         self.camera.viewport = dimensions;
 
+//        println!("Camera viewpoinrt -> {:?}", self.camera.viewport);
+
         // let (mx, my) = input_state.mouse.at;
         // let mouse_at = self.camera.ui_line_segment_for_mouse_position(mx, my);
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
             println!("take a screenshot!");
-            let image = self.renderer.screenshot();
-            let mut output = std::fs::File::create(&Path::new("screenshot.png")).unwrap();
-            image.save(&mut output, image::ImageFormat::PNG).unwrap();
+//            let image = self.renderer.screenshot();
+//            let mut output = std::fs::file::create(&path::new("screenshot.png")).unwrap();
+//            image.save(&mut output, image::imageformat::png).unwrap();
         }
     }
 
     fn render(&mut self) -> JamResult<()> {
-        use jam::font::FontDescription;
+//        use jam::font::FontDescription;
         
-        let font_description = FontDescription { family: "Roboto-Medium".into(), pixel_size: (32f64 * self.camera.viewport.scale()) as u32 };
-        let loaded = self.renderer.load_font(&font_description);
-        match loaded {
-            Err(e) => println!("font load error -> {:?}", e),
-            Ok(_) => (),
-        }
+//        let font_description = FontDescription { family: "Roboto-Medium".into(), pixel_size: (32f64 * self.camera.viewport.scale()) as u32 };
+//        let loaded = self.renderer.load_font(&font_description);
+//        match loaded {
+//            Err(e) => println!("font load error -> {:?}", e),
+//            Ok(_) => (),
+//        }
 
         // println!("render with delta -> {:?}", delta_time);
         let colors = vec![color::WHITE, color::BLUE, color::RED];
@@ -167,7 +170,7 @@ impl App {
 
         // this closure shit is just dangerous
 
-        let mut frame = self.renderer.render(rgb(132, 193, 255))?;
+
         
         // render a grid of various bits of geo
         for i in 0..16 {
@@ -177,14 +180,14 @@ impl App {
 
             if (an % 16) == i && on_second {
                 raster(&mut t, &mut vertices, raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                let geo = frame.draw_vertices(&vertices, Uniforms {
+                let geo = self.renderer.draw_vertices(&vertices, Uniforms {
                     transform : down_size_m4(camera.view_projection().into()),
                     color: color::WHITE,
-                }, Blend::None);
+                }, Blend::None)?;
                 cache.insert(name, geo);
             } else if ((an+8) % 16) == i && on_second {
                 raster(&mut t, &mut vertices, raster_color, (xo * 9) as f64, (zo * 9) as f64);
-                cache.insert(name, frame.upload(&vertices));
+                cache.insert(name, self.renderer.upload(&vertices));
             } else {
                 let rem = (xo + zo) % 3;
                 let color = match rem {
@@ -198,52 +201,52 @@ impl App {
                         1 => Blend::Add,
                         _ => Blend::None,
                     };
-                    frame.draw(geo, Uniforms {
+                    self.renderer.draw(geo, Uniforms {
                         transform: down_size_m4(self.camera.view_projection().into()),
                         color: color,
-                    },blend);
+                    },blend)?;
                 }
             }
         }
 
         // draw ui text
 
-        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
-            // println!("ok we got a font to use to draw layer -> {:?}", layer);
-            let scale = 1.0 / self.camera.viewport.scale();
-            let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
+//        if let Some((font, layer)) = self.renderer.get_font(&font_description) {
+//            // println!("ok we got a font to use to draw layer -> {:?}", layer);
+//            let scale = 1.0 / self.camera.viewport.scale();
+//            let mut t = GeometryTesselator::new(Vec3::new(1.0, 1.0, 1.0));
+//
+//            let texture_region = TextureRegion {
+//                u_min: 0,
+//                u_max: 128,
+//                v_min: 0,
+//                v_max: 128,
+//                texture_size: 1024,
+//            };
+//            t.color = color::WHITE.float_raw();
+//            t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
+//
+//            let at = Vec2::new(0.0, 400.0);
+//            t.color = color::BLACK.float_raw();
+//            text::render_text(
+//                "Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.",
+//                font,
+//                layer,
+//                at,
+//                -1.0, // i assume this is because our coordinate system is hosed ...
+//                scale,
+//                &t,
+//                &mut vertices,
+//                Some(300.0)
+//            );
+//
+//            frame.draw_vertices(&vertices, Uniforms {
+//                transform : down_size_m4(self.camera.ui_projection().into()),
+//                color: color::WHITE,
+//            }, Blend::Alpha);
+//        }
 
-            let texture_region = TextureRegion {
-                u_min: 0,
-                u_max: 128,
-                v_min: 0,
-                v_max: 128,
-                texture_size: 1024,
-            };
-            t.color = color::WHITE.float_raw();
-            t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
-
-            let at = Vec2::new(0.0, 400.0);
-            t.color = color::BLACK.float_raw();
-            text::render_text(
-                "Why oh why does a silly cow fly, you idiot.\n\nGo die in a pie.\n\nPls.", 
-                font, 
-                layer,
-                at,
-                -1.0, // i assume this is because our coordinate system is hosed ... 
-                scale,
-                &t, 
-                &mut vertices,
-                Some(300.0)
-            );
-
-            frame.draw_vertices(&vertices, Uniforms {
-                transform : down_size_m4(self.camera.ui_projection().into()),
-                color: color::WHITE,
-            }, Blend::Alpha);
-        }
-
-        frame.finish();
+        self.renderer.finish_frame().expect("a finished frame");
 
         Ok(())
     }

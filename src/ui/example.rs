@@ -65,7 +65,7 @@ impl App {
     fn run(&mut self) {
         let mut last_time = time::precise_time_ns();
         'main: loop {
-            let (dimensions, input_state) = self.renderer.begin();
+            let (dimensions, input_state) = self.renderer.begin_frame(color::PINK);
 
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000.0;

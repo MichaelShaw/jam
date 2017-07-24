@@ -19,6 +19,7 @@ pub fn get_dimensions(window: &glutin::GlWindow) -> Dimensions { // make this op
 
 pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32, u32), vsync: bool, window_name: &str) -> JamResult<OpenGLRenderer> {
     let (width, height) = dimensions;
+    println!("pre events");
     let mut events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
         .with_title("Triangle example".to_string())
@@ -28,18 +29,23 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
         .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
         .with_vsync(true);
 
+
     //    context = 4;
 
+    println!("pre build");
     let (window, mut device, mut factory, mut main_color, mut main_depth) = gfx_window_glutin::init::<ColorFormat, DepthFormat>(window_config, context, &events_loop);
 
+    println!("post build");
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
+    println!("post encoder");
     let sampler = factory.create_sampler_linear();
 
     let dimensions = get_dimensions(&window);
 
+    println!("pre watch");
     let file_watcher = file_resources.watch();
-
+    println!("post watch");
     Ok(Renderer {
         file_resources,
         file_watcher,

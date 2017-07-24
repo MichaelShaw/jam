@@ -55,6 +55,10 @@ pub enum JamError {
     FileDoesntExist(PathBuf),
     PipelineError(gfx::PipelineStateError<String>),
     CombinedGFXError(gfx::CombinedError),
+    ContextError(glutin::ContextError),
+    NoTexture(),
+    NoPipeline(),
+
 //    ProgramLoadError(glium::ProgramCreationError),
 //    TextureLoadError(glium::texture::TextureCreationError),
     FontLoadError(font::FontLoadError),

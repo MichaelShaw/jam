@@ -10,7 +10,7 @@ glutin = "0.9"
 gfx_window_glutin = "0.17"
 image = "0.14"
 cgmath = "0.14"
-notify = "3.0"
+notify = "4.0"
 time = "0.1"
 rusttype = "0.2"
 
