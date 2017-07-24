@@ -206,7 +206,9 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         let pixels = (width as usize * height as usize * depth as usize);
         println!("screen dimensions {:?} x {:?} x {:?} pixels -> {:?}", width, height, depth, pixels);
 
-        let download_buffer = self.factory.create_download_buffer::<u8>(pixels * 4).map_err(JamError::CreationError)?;
+//        let (tex, srv, rtv) = self.factory.create_render_target(width, height)?;
+
+//        let download_buffer = self.factory.create_download_buffer::<u8>(pixels * 4).map_err(JamError::CreationError)?;
 
         // this would appear to require a frame buffer now ... which is ... quite a cost just to take screenshots.
 
