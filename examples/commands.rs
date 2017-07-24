@@ -10,7 +10,7 @@ extern crate gfx_device_gl;
 extern crate aphid;
 
 use std::f64::consts::PI;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use cgmath::Rad;
 
@@ -26,11 +26,13 @@ use aphid::HashMap;
 
 
 fn main() {
+    let resources_path = PathBuf::from("resources");
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
     let file_resources = FileResources {
+        resources: resources_path,
         shader_pair : shader_pair,
         texture_directory: texture_dir,
         font_directory: font_dir,

@@ -94,6 +94,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                         close_requested = true
                     },
                     &glutin::WindowEvent::Resized(width, height) => {
+                        self.window.resize(width, height);
                         resize = true;
                     },
                     _ => (),

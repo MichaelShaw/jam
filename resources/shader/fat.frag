@@ -21,11 +21,12 @@ void main() {
     vec4 final_colour = albedo_colour; // * light;
     final_colour.a = albedo_colour.a; // ignore light's alpha
 
-    if(final_colour.a < u_alpha_minimum) {
-        discard;
-    }
-    // f_color = final_colour;
-    f_color = vec4(1.0, 0.0, 0.0, 1.0);
+   // if(final_colour.a < u_alpha_minimum) {
+    //    discard;
+   // }
+    f_color = final_colour;
+    f_color = texture(u_texture, v_tex_coord);
+    // f_color = vec4(1.0, 0.0, 0.0, 1.0);
 }
 
 

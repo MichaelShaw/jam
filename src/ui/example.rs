@@ -12,15 +12,17 @@ use cgmath::Rad;
 
 use std::f64::consts::PI;
 use Dimensions;
-
+use std::path::PathBuf;
 use ui::*;
 
 pub fn run() {
+    let resources_path = PathBuf::from("resources");
     let shader_pair = ShaderPair::for_paths("resources/shader/fat.vert", "resources/shader/fat.frag");
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
     let file_resources = FileResources {
+        resources: resources_path,
         shader_pair: shader_pair,
         texture_directory: texture_dir,
         font_directory: font_dir,
