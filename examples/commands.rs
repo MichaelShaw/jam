@@ -120,7 +120,7 @@ impl App {
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
             println!("take a screenshot!");
-//            let image = self.renderer.screenshot();
+            let image = self.renderer.screenshot();
 //            let mut output = std::fs::file::create(&path::new("screenshot.png")).unwrap();
 //            image.save(&mut output, image::imageformat::png).unwrap();
         }

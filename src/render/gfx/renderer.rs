@@ -2,7 +2,7 @@ use gfx;
 use glutin;
 use gfx_device_gl;
 
-use gfx::format::Rgba8;
+use gfx::format::{Srgba8, Rgba8};
 use gfx::Device;
 use gfx::traits::FactoryExt;
 use gfx_window_glutin;
@@ -18,6 +18,7 @@ use font::FontDirectory;
 use {Dimensions, InputState};
 use glutin::GlContext;
 
+use image::DynamicImage;
 use notify::{RawEvent};
 use std::sync::mpsc::{Receiver};
 
@@ -163,13 +164,17 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         if reload_texture || self.texture.is_none() {
             println!("LOAD TEXTURES");
             let texture_load_result = self.file_resources.texture_directory.load().and_then(|texture_array_data| {
-                let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| img.clone().into_raw() ).collect();
+                let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| {
+//                    let dyn_image = DynamicImage::ImageRgba8(img.clone()).flipv();
+//                    dyn_image.to_rgba().into_raw()
+                    img.clone().into_raw()
+                } ).collect();
                 let data : Vec<_> = images_raw.iter().map(|v| v.as_slice()).collect();
 
                 let kind = texture_kind_for(&texture_array_data.dimensions);
 
                 println!("kind -> {:?}", kind);
-                let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Rgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
+                let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Srgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
 
                 Ok((texture, texture_view))
             });
@@ -194,6 +199,31 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
             buffer,
             slice,
         }
+    }
+
+    pub fn screenshot(&mut self) -> JamResult<()> { // -> image::DynamicImage
+        let (width, height, depth, _) = self.screen_colour_target.get_dimensions();
+        let pixels = (width as usize * height as usize * depth as usize);
+        println!("screen dimensions {:?} x {:?} x {:?} pixels -> {:?}", width, height, depth, pixels);
+
+        let download_buffer = self.factory.create_download_buffer::<u8>(pixels * 4).map_err(JamError::CreationError)?;
+
+        // this would appear to require a frame buffer now ... which is ... quite a cost just to take screenshots.
+
+
+//        self.encoder.copy_texture_to_buffer_raw(src: &RawTexture<R>, None, info: texture::RawImageInfo,
+//                                                dst: &handle::RawBuffer<R>, 0);
+//        ,
+//        face: Option<CubeFace>,
+//        info: RawImageInfo,
+//        dst: &RawBuffer<R>,
+//        dst_offset_bytes: usize
+
+//        let image: glium::texture::RawImage2d<u8> = self.display.read_front_buffer();
+//        let image = image::ImageBuffer::from_raw(image.width, image.height, image.data.into_owned()).unwrap();
+//        let image = image::DynamicImage::ImageRgba8(image).flipv();
+//        image
+        Ok(())
     }
 
     pub fn draw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend) -> JamResult<()> {
