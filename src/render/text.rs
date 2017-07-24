@@ -2,7 +2,7 @@
 use font::BitmapFont;
 use super::quads;
 
-use render::vertex::Vertex;
+use render::Vertex;
 
 use Vec2;
 

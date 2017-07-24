@@ -3,7 +3,7 @@ extern crate cgmath;
 use {Vec3};
 use color::*;
 use cgmath::{Rad, Matrix3, Point3, Transform};
-use super::vertex::Vertex;
+use render::Vertex;
 use render::texture_region::TextureRegion;
 
 pub fn add_quad<T>(vertices: &mut Vec<T>, ts:[T; 4]) where T : Copy {

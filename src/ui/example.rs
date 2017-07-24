@@ -5,7 +5,7 @@ use font::FontDirectory;
 use {Camera, Vec3, Vec2, InputState, JamResult, rgb};
 use color;
 use render::*;
-use render::glium::renderer::{Renderer, GeometryBuffer};
+use render::gfx::{Renderer,OpenGLRenderer, GeometryBuffer, construct_opengl_renderer};
 
 use time;
 use cgmath::Rad;
@@ -20,7 +20,15 @@ pub fn run() {
     let texture_dir = TextureDirectory::for_path("resources/textures", hashset!["png".into()]);
     let font_dir = FontDirectory::for_path("resources/fonts");
 
-    let renderer = Renderer::new(shader_pair, texture_dir, font_dir, (800, 600), true, "commands example".into()).expect("a renderer");
+    let file_resources = FileResources {
+        shader_pair: shader_pair,
+        texture_directory: texture_dir,
+        font_directory: font_dir,
+    };
+
+
+
+    let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "commands example").expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),
@@ -49,7 +57,7 @@ struct App {
     zoom : f64,
     points_per_unit : f64,
     n : u64,
-    renderer : Renderer,
+    renderer : OpenGLRenderer,
     widget_runner: WidgetRunner<ExampleWidget>,
 }
 
@@ -90,30 +98,30 @@ impl App {
 
     fn render(&mut self) -> JamResult<()> {
         let mut t = self.tesselator();
-        let mut vertices = Vec::new();
+//        let mut vertices = Vec::new();
 
-        let mut frame = self.renderer.render(rgb(132, 193, 255))?;
-
-//        let layer = 0;
-        let scale = 1.0 / self.camera.viewport.scale() as f64;
-        let texture_region = TextureRegion {
-            u_min: 0,
-            u_max: 128,
-            v_min: 0,
-            v_max: 128,
-            texture_size: 1024,
-        };
-        t.color = color::WHITE.float_raw();
-        t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
-
-        frame.draw_vertices(&vertices, Uniforms {
-            transform : down_size_m4(self.camera.ui_projection().into()),
-            color: color::WHITE,
-        }, Blend::Alpha);
-
-        frame.draw_view(self.widget_runner.view());
-
-        frame.finish();
+//        let mut frame = self.renderer.render(rgb(132, 193, 255))?;
+//
+////        let layer = 0;
+//        let scale = 1.0 / self.camera.viewport.scale() as f64;
+//        let texture_region = TextureRegion {
+//            u_min: 0,
+//            u_max: 128,
+//            v_min: 0,
+//            v_max: 128,
+//            texture_size: 1024,
+//        };
+//        t.color = color::WHITE.float_raw();
+//        t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
+//
+//        frame.draw_vertices(&vertices, Uniforms {
+//            transform : down_size_m4(self.camera.ui_projection().into()),
+//            color: color::WHITE,
+//        }, Blend::Alpha);
+//
+//        frame.draw_view(self.widget_runner.view());
+//
+//        frame.finish();
 
         Ok(())
     }

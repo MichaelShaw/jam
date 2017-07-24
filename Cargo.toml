@@ -4,8 +4,10 @@ version = "0.1.0"
 authors = ["Michael Shaw <michaeljshaw@gmail.com>"]
 
 [dependencies]
-glium = "0.17"
+gfx = "0.16"
+gfx_device_gl = "0.14"
 glutin = "0.9"
+gfx_window_glutin = "0.17"
 image = "0.14"
 cgmath = "0.14"
 notify = "3.0"

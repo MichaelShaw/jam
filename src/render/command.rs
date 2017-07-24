@@ -1,5 +1,5 @@
 
-use super::vertex::Vertex;
+use super::Vertex;
 
 use color::Color;
 

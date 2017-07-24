@@ -1,9 +1,11 @@
 #![crate_name="jam"]
 #![allow(dead_code)]
 
-extern crate glutin;
 #[macro_use]
-extern crate glium;
+extern crate gfx;
+extern crate gfx_window_glutin;
+extern crate glutin;
+extern crate gfx_device_gl;
 
 extern crate time;
 
@@ -51,12 +53,14 @@ pub type JamResult<T> = Result<T, JamError>;
 pub enum JamError {
     IO(io::Error),
     FileDoesntExist(PathBuf),
-    ProgramLoadError(glium::ProgramCreationError),
-    TextureLoadError(glium::texture::TextureCreationError),
+    PipelineError(gfx::PipelineStateError<String>),
+    CombinedGFXError(gfx::CombinedError),
+//    ProgramLoadError(glium::ProgramCreationError),
+//    TextureLoadError(glium::texture::TextureCreationError),
     FontLoadError(font::FontLoadError),
     ImageError(image::ImageError),
-    WindowCreationError(glium::backend::glutin::DisplayCreationError),
-    SwapBufferError(glium::SwapBuffersError),
+//    WindowCreationError(glium::backend::glutin::DisplayCreationError),
+//    SwapBufferError(glium::SwapBuffersError),
     MustLoadTextureBeforeFont,
     NoFiles,
     MismatchingDimensions, // path buf, expectation
