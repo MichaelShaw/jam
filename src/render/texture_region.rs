@@ -63,7 +63,7 @@ impl TextureRegion {
     }
 
     pub fn nu_min(&self) -> f32 {
-        (self.u_min as f32) / (self.texture_size as f32)
+         (self.u_min as f32) / (self.texture_size as f32)
     }
 
     pub fn nu_max(&self) -> f32 {
@@ -71,11 +71,11 @@ impl TextureRegion {
     }
 
     pub fn nv_min(&self) -> f32 {
-        (self.v_min as f32) / (self.texture_size as f32)
+        1.0 - (self.v_min as f32) / (self.texture_size as f32)
     }
 
     pub fn nv_max(&self) -> f32 {
-        (self.v_max as f32) / (self.texture_size as f32)
+        1.0 - (self.v_max as f32) / (self.texture_size as f32)
     }
 
     pub fn nu_mid(&self) -> f32 {

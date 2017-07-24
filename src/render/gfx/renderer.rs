@@ -163,10 +163,12 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         if reload_texture || self.texture.is_none() {
             println!("LOAD TEXTURES");
             let texture_load_result = self.file_resources.texture_directory.load().and_then(|texture_array_data| {
-                let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| img.clone().into_raw()).collect();
+                let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| img.clone().into_raw() ).collect();
                 let data : Vec<_> = images_raw.iter().map(|v| v.as_slice()).collect();
 
                 let kind = texture_kind_for(&texture_array_data.dimensions);
+
+                println!("kind -> {:?}", kind);
                 let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Rgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
 
                 Ok((texture, texture_view))

@@ -274,7 +274,8 @@ fn raster(t: &mut GeometryTesselator, vertices: &mut Vec<Vertex>, color:Color, x
     };
 
     t.color = color.float_raw();
-    t.draw_floor_tile(vertices, &texture_region.h_flip().v_flip(), 0, x, 0.0, z, 0.0);
+    // .h_flip().v_flip()
+    t.draw_floor_tile(vertices, &texture_region, 0, x, 0.0, z, 0.0);
     t.color = color::RED.float_raw();
     t.draw_wall_tile(vertices, &texture_region_small, 0, x, 0.0, z, 0.0);
     t.color = color::GREEN.float_raw();
