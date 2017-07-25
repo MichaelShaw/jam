@@ -7,6 +7,29 @@ pub struct Color {
     pub a: u8,
 }
 
+use std::ops::Mul;
+
+
+impl Mul<f32> for Color {
+    // The multiplication of rational numbers is a closed operation.
+    type Output = Self;
+
+    fn mul(self, rhs: f32) -> Self {
+        let nr = (self.r as f32) * rhs;
+        let ng = (self.g as f32) * rhs;
+        let nb = (self.b as f32) * rhs;
+        let na = (self.a as f32) * rhs;
+
+        Color {
+            r: nr as u8,
+            g: ng as u8,
+            b: nb as u8,
+            a: na as u8,
+        }
+    }
+}
+
+
 pub const RED: Color = Color { r:255, g:0, b:0, a:255 };
 pub const GREEN: Color = Color { r:0, g:255, b:0, a:255 };
 pub const YELLOW: Color = Color { r:255, g:255, b:0, a:255 };
@@ -30,6 +53,15 @@ pub fn rgb(r:u8, g:u8, b:u8) -> Color {
 }
 
 impl Color {
+    pub fn with_alpha(&self, new_alpha: f32) -> Color {
+        Color {
+            r: self.r,
+            g: self.g,
+            b: self.b,
+            a: (new_alpha * 255.0) as u8,
+        }
+    }
+
     pub fn rf(&self) -> f32 {
         (self.r as f32) / 255.0
     }

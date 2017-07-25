@@ -12,6 +12,7 @@ use color;
 use aphid::HashMap;
 
 use render::TextureArrayDimensions;
+use font::load_fonts_in_path;
 
 use {JamResult, JamError, InputState, Dimensions};
 
@@ -30,7 +31,7 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     println!("pre events");
     let mut events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
-        .with_title("Triangle example".to_string())
+        .with_title(window_name.to_string())
         .with_dimensions(width, height);
     use glutin::{GlRequest, Api};
     let context = glutin::ContextBuilder::new()
@@ -68,32 +69,40 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     let ui_tex = factory.create_texture(kind, 1, bind, gfx::memory::Usage::Dynamic, Some(cty)).map_err(JamError::TextureCreationError)?;
     let ui_tex_view = factory.view_texture_as_shader_resource::<Srgba8>(&ui_tex, (0, 0), gfx::format::Swizzle::new()).map_err(JamError::ResourceViewError)?;
 
-    for l in 0..ui_layers {
-        let image_info = ImageInfoCommon {
-            xoffset: 0,
-            yoffset: 0,
-            zoffset: l as u16,
-            width: ui_store_dimensions.width as u16,
-            height: ui_store_dimensions.height as u16,
-            depth: 1,
-            format: (),
-            mipmap: 0,
-        };
-        let pixels = ui_store_dimensions.width * ui_store_dimensions.height;
-
-        let color_raw = color::ALL[l as usize].raw();
+    // go through the font directory
 
 
+//   colored test layers for ui texture
+//    for l in 0..ui_layers {
+//        let image_info = ImageInfoCommon {
+//            xoffset: 0,
+//            yoffset: 0,
+//            zoffset: l as u16,
+//            width: ui_store_dimensions.width as u16,
+//            height: ui_store_dimensions.height as u16,
+//            depth: 1,
+//            format: (),
+//            mipmap: 0,
+//        };
+//        let pixels = ui_store_dimensions.width * ui_store_dimensions.height;
+//
+//        let color_raw = color::ALL[l as usize].raw();
+//
+//
+//
+//        let mut data : Vec<[u8; 4]> = (0..pixels).map(|sl| color_raw ).collect();
+//
+//        encoder.update_texture::<R8_G8_B8_A8, Srgba8>(
+//            &ui_tex,
+//            None,
+//            image_info,
+//            &data,
+//        ).expect("updating the texture");
+//    }
 
-        let mut data : Vec<[u8; 4]> = (0..pixels).map(|sl| color_raw ).collect();
+    let fonts = load_fonts_in_path(file_resources.font_directory.path.as_path())?;
 
-        encoder.update_texture::<R8_G8_B8_A8, Srgba8>(
-            &ui_tex,
-            None,
-            image_info,
-            &data,
-        ).expect("updating the texture");
-    }
+    println!("ok how many loaded fonts -> {:?}", fonts.len());
 
     let ui = UI {
         dimensions: ui_store_dimensions,
@@ -102,6 +111,7 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
         elements: HashMap::default(),
         tick: 0,
         free_layers: (0..ui_store_dimensions.layers).collect(),
+        fonts,
     };
 
     Ok(Renderer {

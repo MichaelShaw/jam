@@ -25,14 +25,17 @@ pub mod geometry;
 pub mod spring;
 pub mod color;
 pub mod font;
+pub mod bitmap_font;
 pub mod dimensions;
 pub mod ui;
 
-pub use font::*;
+
+
 pub use camera::*;
 pub use color::*;
 pub use dimensions::*;
 pub use font::*;
+pub use bitmap_font::*;
 pub use geometry::*;
 pub use input::*;
 pub use spring::*;
@@ -64,7 +67,7 @@ pub enum JamError {
 
 //    ProgramLoadError(glium::ProgramCreationError),
 //    TextureLoadError(glium::texture::TextureCreationError),
-    FontLoadError(font::FontLoadError),
+    FontLoadError(FontLoadError),
     ImageError(image::ImageError),
 //    WindowCreationError(glium::backend::glutin::DisplayCreationError),
 //    SwapBufferError(glium::SwapBuffersError),
@@ -74,8 +77,8 @@ pub enum JamError {
     RenderingPipelineIncomplete,
 }
 
-impl From<font::FontLoadError> for JamError {
-    fn from(err: font::FontLoadError) -> Self {
+impl From<FontLoadError> for JamError {
+    fn from(err: FontLoadError) -> Self {
         JamError::FontLoadError(err)
     }
 }

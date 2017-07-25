@@ -15,7 +15,7 @@ use super::{pipe_blend, pipe_opaque, get_dimensions};
 
 use {input, JamError, JamResult, color, Color};
 use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend, TextureRegion, GeometryTesselator};
-use font::FontDirectory;
+use FontDirectory;
 use {Dimensions, InputState};
 use glutin::GlContext;
 use camera::ui_projection;
@@ -30,6 +30,8 @@ use aphid::HashMap;
 use ui::*;
 
 use cgmath::{Vector2, vec3};
+
+use OurFont;
 
 pub type OpenGLRenderer = Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, gfx_device_gl::Factory, gfx_device_gl::Device>;
 
@@ -77,12 +79,14 @@ pub struct UI<R> where R : gfx::Resources {
     pub elements: HashMap<ElementWithSize<i32>, RasterElement>,
     pub tick: usize,
     pub free_layers: Vec<u32>,
+    pub fonts: Vec<OurFont>,
 }
 
 pub struct RasterElement {
     pub translation: Vector2<i32>, // translation from requested origin to output area
     pub texture_region: TextureRegion,
     pub last_used: usize,
+    // include a cost metric for rasterization time?
 }
 
 pub struct Pipelines<R> where R : gfx::Resources {
@@ -145,6 +149,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         self.input_state.close = close_requested;
 
         let dimensions = get_dimensions(&self.window);
+        self.dimensions = dimensions;
 
         // clear
         if !close_requested {
@@ -355,7 +360,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                 },
                 Entry::Vacant(mut ve) => {
                     println!("RASTER -> {:?} @ {:?}", layer, tick);
-                    let (img, translation) = raster(&layer.content, size);
+                    let (img, translation) = raster(&layer.content, size, self.ui.fonts.as_slice());
                     let use_layer = self.ui.free_layers.pop().expect("a free layer");
 
                     let region = TextureRegion {
@@ -371,10 +376,6 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                         texture_region: region,
                         last_used: tick,
                     };
-
-                    // push the texture update
-                    println!("raster image dimensions {:?} use layer {:?}", img.dimensions(), use_layer);
-
                     let mut image_info = ImageInfoCommon {
                         xoffset: 0,
                         yoffset: 0,
@@ -386,19 +387,13 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                         mipmap: 0,
                     };
 
-                    println!("image info -> {:?}", image_info);
-
                     let mut data : Vec<[u8; 4]> = img.into_raw().chunks(4).map(|sl| [sl[0], sl[1], sl[2], sl[3]]).collect();
-
-                    println!("data count -> {:?} first -> {:?}", data.len(), data.first());
-
                     self.encoder.update_texture::<R8_G8_B8_A8, Srgba8>(
                         &self.ui.texture_resource,
                         None,
                         image_info,
                         &data,
                     ).expect("updating the texture");
-
                     ve.insert(re);
                     (translation, region)
                 },
@@ -407,32 +402,13 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
             let position = raster_translation + rect_abs.min;
             let z = (v_z as f64) * 1.0 + (l_z as f64) * 0.1;
 
-//            println!("position {:?}     raster region {:?}", position, region);
-
-            tesselator.draw_ui(&mut vertices, &region, position.x as f64, position.y as f64, 0.0, 1.0);
+            tesselator.draw_ui(&mut vertices, &region, position.x as f64, position.y as f64, z, 1.0);
         }
-
-//        for l in 0..8 {
-//            let region = TextureRegion {
-//                u_min: 0,
-//                u_max: 512,
-//                v_min: 0,
-//                v_max: 512,
-//                layer: l,
-//                texture_size: 512,
-//            };
-//            let scale = 0.10;
-//
-//            let x = 512.0 * scale * 1.1 * l as f64;
-//            let y = 0.0;
-//
-//            tesselator.draw_ui(&mut vertices, &region, x, y, 0.0, scale);
-//        }
-
-
 
         // transform
         let (pixel_width, pixel_height) = self.dimensions.pixels;
+
+//        println!("screen dimensions {:?} {:?}", pixel_width, pixel_height);
         let transform = ui_projection(pixel_width as f64, pixel_height as f64);
         let uniforms = Uniforms {
             transform : down_size_m4(transform.into()),
@@ -442,8 +418,25 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
 
         self.ui.tick += 1;
 
-        self.draw_raw(&geo, uniforms, Blend::None, TextureArraySource::UI)
+        self.draw_raw(&geo, uniforms, Blend::Alpha, TextureArraySource::UI)
     }
+
+    //        for l in 0..8 {
+    //            let region = TextureRegion {
+    //                u_min: 0,
+    //                u_max: 512,
+    //                v_min: 0,
+    //                v_max: 512,
+    //                layer: l,
+    //                texture_size: 512,
+    //            };
+    //            let scale = 0.10;
+    //
+    //            let x = 512.0 * scale * 1.1 * l as f64;
+    //            let y = 0.0;
+    //
+    //            tesselator.draw_ui(&mut vertices, &region, x, y, 0.0, scale);
+    //        }
 }
 
 pub fn texture_kind_for(dimensions: &TextureArrayDimensions) -> gfx::texture::Kind {

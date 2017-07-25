@@ -42,7 +42,7 @@ impl Text {
         Text {
             characters: text,
             color: color::WHITE,
-            size: 10,
+            size: 25,
             horizontal_alignment: HorizontalAlignment::Left,
             vertical_alignment: VerticalAlignment::Top,
         }

@@ -1,7 +1,7 @@
 
 use aphid::{HashSet, HashMap, Seconds};
 
-use font::FontDirectory;
+use FontDirectory;
 use {Camera, Vec3, Vec2, InputState, JamResult, rgb};
 use color;
 use render::*;
@@ -28,7 +28,7 @@ pub fn run() {
         font_directory: font_dir,
     };
 
-    let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "commands example").expect("a renderer");
+    let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "ui example").expect("a renderer");
 
     let mut app = App {
         name: "mixalot".into(),

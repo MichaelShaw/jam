@@ -18,7 +18,7 @@ pub use self::texture_region::*;
 
 pub use self::gfx::Vertex;
 
-use font::FontDirectory;
+use FontDirectory;
 use notify::{RecommendedWatcher, PollWatcher, Watcher, RecursiveMode, RawEvent, FsEventWatcher};
 use std::sync::mpsc::{channel, Receiver};
 use std::path::PathBuf;

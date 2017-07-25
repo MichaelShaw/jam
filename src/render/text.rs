@@ -1,5 +1,5 @@
 
-use font::BitmapFont;
+use BitmapFont;
 use super::quads;
 
 use render::Vertex;
