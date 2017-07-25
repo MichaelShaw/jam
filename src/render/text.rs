@@ -17,7 +17,7 @@ pub fn render(text:&str, font: &BitmapFont, layer:u32, top_left:Vec2, z: f64, sc
         if let Some(glyph) = font.glyphs.get(&c) {
             // no kerning yet
             if let Some(ref tr) = glyph.texture_region {
-                tesselator.draw_ui(vertices, tr, layer, at.x as f64, at.y as f64, z, scale);
+                tesselator.draw_ui(vertices, tr, at.x as f64, at.y as f64, z, scale);
             }
 
             let kerning : i32 = if i < chars.len() - 1 {

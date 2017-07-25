@@ -13,7 +13,7 @@ use super::{Vertex, ColorFormat, DepthFormat, GeometryBuffer, Locals};
 use super::{pipe_blend, pipe_opaque, get_dimensions};
 
 use {input, JamError, JamResult};
-use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend};
+use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend, TextureRegion};
 use font::FontDirectory;
 use {Dimensions, InputState};
 use glutin::GlContext;
@@ -22,6 +22,11 @@ use image::DynamicImage;
 use notify::{RawEvent};
 use std::sync::mpsc::{Receiver};
 
+use aphid::HashMap;
+
+use ui::*;
+
+use cgmath::Vector2;
 
 pub type OpenGLRenderer = Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, gfx_device_gl::Factory, gfx_device_gl::Device>;
 
@@ -32,7 +37,7 @@ pub struct Renderer<R, C, F, D> where R : gfx::Resources,
     pub file_resources: FileResources,
     pub file_watcher: FileWatcher,
 
-    // I guess closing over these with an enum would be the path
+    // next 2 are opengl specific
     pub window: glutin::GlWindow, // opengl
     pub events_loop: glutin::EventsLoop, // opengl
 
@@ -43,6 +48,7 @@ pub struct Renderer<R, C, F, D> where R : gfx::Resources,
     pub screen_depth_target: gfx::handle::DepthStencilView<R, DepthFormat>,
     pub encoder: gfx::Encoder<R, C>,
 
+    // what about raw texture representation? for blitting to ui
     pub texture: Option<(gfx::handle::Texture<R, gfx::format::R8_G8_B8_A8>, gfx::handle::ShaderResourceView<R, [f32; 4]>)>,
 
     pub sampler: gfx::handle::Sampler<R>,
@@ -51,6 +57,21 @@ pub struct Renderer<R, C, F, D> where R : gfx::Resources,
 
     pub dimensions: Dimensions,
     pub input_state: InputState,
+
+    pub ui: UI<R>,
+}
+
+pub struct UI<R> where R : gfx::Resources {
+    pub dimensions: TextureArrayDimensions,
+    pub texture_resource: gfx::handle::Texture<R, gfx::format::R8_G8_B8_A8>,
+    pub texture_view: gfx::handle::ShaderResourceView<R, [f32; 4]>,
+    pub elements: HashMap<ElementWithSize<i32>, RasterElement>,
+}
+
+pub struct RasterElement {
+    pub translation: Vector2<i32>, // translation from requested origin to output area
+    pub texture_region: TextureRegion,
+    pub last_used: usize,
 }
 
 pub struct Pipelines<R> where R : gfx::Resources {
@@ -201,10 +222,10 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         }
     }
 
-    pub fn screenshot(&mut self) -> JamResult<()> { // -> image::DynamicImage
-        let (width, height, depth, _) = self.screen_colour_target.get_dimensions();
-        let pixels = (width as usize * height as usize * depth as usize);
-        println!("screen dimensions {:?} x {:?} x {:?} pixels -> {:?}", width, height, depth, pixels);
+//    pub fn screenshot(&mut self) -> JamResult<()> { // -> image::DynamicImage
+//        let (width, height, depth, _) = self.screen_colour_target.get_dimensions();
+//        let pixels = (width as usize * height as usize * depth as usize);
+//        println!("screen dimensions {:?} x {:?} x {:?} pixels -> {:?}", width, height, depth, pixels);
 
 //        let (tex, srv, rtv) = self.factory.create_render_target(width, height)?;
 
@@ -225,8 +246,8 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
 //        let image = image::ImageBuffer::from_raw(image.width, image.height, image.data.into_owned()).unwrap();
 //        let image = image::DynamicImage::ImageRgba8(image).flipv();
 //        image
-        Ok(())
-    }
+//        Ok(())
+//    }
 
     pub fn draw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend) -> JamResult<()> {
         let &(ref t, ref tv) = self.texture.as_ref().ok_or(JamError::NoTexture())?;
@@ -285,6 +306,11 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         self.encoder.flush(&mut self.device);
         self.window.swap_buffers().map_err(JamError::ContextError)?;
         self.device.cleanup();
+        Ok(())
+    }
+
+    pub fn draw_view<Ev>(&mut self, view:&View<Ev>) -> JamResult<()> {
+
         Ok(())
     }
 }

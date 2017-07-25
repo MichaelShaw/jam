@@ -119,8 +119,8 @@ impl App {
         // let mouse_at = self.camera.ui_line_segment_for_mouse_position(mx, my);
 
         if input_state.keys.pushed.contains(&VirtualKeyCode::P) {
-            println!("take a screenshot!");
-            let image = self.renderer.screenshot();
+//            println!("take a screenshot!");
+//            let image = self.renderer.screenshot();
 //            let mut output = std::fs::file::create(&path::new("screenshot.png")).unwrap();
 //            image.save(&mut output, image::imageformat::png).unwrap();
         }
@@ -262,6 +262,7 @@ fn raster(t: &mut GeometryTesselator, vertices: &mut Vec<Vertex>, color:Color, x
         u_max: 128,
         v_min: 0,
         v_max: 128,
+        layer: 0,
         texture_size: 1024,
     };
 
@@ -270,22 +271,23 @@ fn raster(t: &mut GeometryTesselator, vertices: &mut Vec<Vertex>, color:Color, x
         u_max: 32,
         v_min: 16,
         v_max: 32,
+        layer: 0,
         texture_size: 1024,
     };
 
     t.color = color.float_raw();
     // .h_flip().v_flip()
-    t.draw_floor_tile(vertices, &texture_region, 0, x, 0.0, z, 0.0);
+    t.draw_floor_tile(vertices, &texture_region, x, 0.0, z, 0.0);
     t.color = color::RED.float_raw();
-    t.draw_wall_tile(vertices, &texture_region_small, 0, x, 0.0, z, 0.0);
+    t.draw_wall_tile(vertices, &texture_region_small, x, 0.0, z, 0.0);
     t.color = color::GREEN.float_raw();
-    t.draw_floor_centre_anchored(vertices, &texture_region_small, 0, x + 2.0, 0.0, z + 2.0, 0.1);
+    t.draw_floor_centre_anchored(vertices, &texture_region_small, x + 2.0, 0.0, z + 2.0, 0.1);
     t.color = color::YELLOW.float_raw();
 
-    t.draw_floor_centre_anchored_rotated(vertices, &texture_region_small, 0, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
+    t.draw_floor_centre_anchored_rotated(vertices, &texture_region_small, x + 4.0, 0.0, z + 4.0, 0.0, 0.1);
 
     t.color = color::RED.float_raw();
-    t.draw_wall_base_anchored(vertices, &texture_region_small, 0, x + 3.0, 0.0, z, 0.0);
+    t.draw_wall_base_anchored(vertices, &texture_region_small, x + 3.0, 0.0, z, 0.0);
     t.color = color::YELLOW.float_raw();
-    t.draw_wall_centre_anchored(vertices, &texture_region_small, 0, x + 5.0, 1.0, z, 0.0);
+    t.draw_wall_centre_anchored(vertices, &texture_region_small, x + 5.0, 1.0, z, 0.0);
 }

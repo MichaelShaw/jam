@@ -4,11 +4,17 @@ use gfx;
 use gfx_device_gl;
 use gfx_window_glutin;
 use gfx::traits::FactoryExt;
+use gfx::Factory;
+use gfx::format::{Srgba8};
 
-use {JamResult, InputState, Dimensions};
+use aphid::HashMap;
+
+use render::TextureArrayDimensions;
+
+use {JamResult, JamError, InputState, Dimensions};
 
 use render::FileResources;
-use super::{Renderer, ColorFormat, DepthFormat, OpenGLRenderer};
+use super::{Renderer, ColorFormat, DepthFormat, OpenGLRenderer, UI, texture_kind_for};
 
 pub fn get_dimensions(window: &glutin::GlWindow) -> Dimensions { // make this optional at some point
     Dimensions {
@@ -46,6 +52,26 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     println!("pre watch");
     let file_watcher = file_resources.watch();
     println!("post watch");
+
+    let ui_store_dimensions = TextureArrayDimensions {
+        width: 512,
+        height: 512,
+        layers: 8,
+    };
+
+    let kind = texture_kind_for(&ui_store_dimensions);
+    let bind = gfx::SHADER_RESOURCE;
+    let cty = gfx::format::ChannelType::Unorm;
+    let ui_tex = factory.create_texture(kind, 1, bind, gfx::memory::Usage::Dynamic, Some(cty)).map_err(JamError::TextureCreationError)?;
+    let ui_tex_view = factory.view_texture_as_shader_resource::<Srgba8>(&ui_tex, (0, 0), gfx::format::Swizzle::new()).map_err(JamError::ResourceViewError)?;
+
+    let ui = UI {
+        dimensions: ui_store_dimensions,
+        texture_resource: ui_tex,
+        texture_view: ui_tex_view,
+        elements: HashMap::default(),
+    };
+
     Ok(Renderer {
         file_resources,
         file_watcher,
@@ -61,5 +87,6 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
         pipelines: None,
         dimensions,
         input_state: InputState::default(),
+        ui: ui,
     })
 }

@@ -58,7 +58,9 @@ pub enum JamError {
     ContextError(glutin::ContextError),
     NoTexture(),
     NoPipeline(),
-    CreationError(gfx::buffer::CreationError),
+    BufferCreationError(gfx::buffer::CreationError),
+    TextureCreationError(gfx::texture::CreationError),
+    ResourceViewError(gfx::ResourceViewError),
 
 //    ProgramLoadError(glium::ProgramCreationError),
 //    TextureLoadError(glium::texture::TextureCreationError),

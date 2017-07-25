@@ -28,8 +28,6 @@ pub fn run() {
         font_directory: font_dir,
     };
 
-
-
     let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "commands example").expect("a renderer");
 
     let mut app = App {
@@ -170,8 +168,8 @@ impl Widget for ExampleWidget {
     fn view(&self, state:&ExampleState) -> View<ExampleEvent> {
         let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 140)));
 
-        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(100, 100)), format!("{}", state.score_a )));
-        view.sub_views.push(label_view(RectI::new(vec2(100, 0), vec2(100, 100)), format!("{}", state.score_b )));
+        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(100, 100)), state.score_a.to_string() ));
+        view.sub_views.push(label_view(RectI::new(vec2(100, 0), vec2(100, 100)), state.score_b.to_string() ));
         view.sub_views.push(label_view(RectI::new(vec2(200, 0), vec2(100, 100)), format!("P{} {}", state.period, state.time_remaining)));
         view.sub_views.push(label_view(RectI::new(vec2(0, 100), vec2(300, 40)), state.play_status.clone()));
 

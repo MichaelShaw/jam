@@ -2,6 +2,8 @@ use super::RectI;
 use Color;
 use color;
 
+use cgmath::Vector2;
+
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
 pub struct Layer {
     pub frame: RectI,
@@ -12,6 +14,12 @@ pub struct Layer {
 pub enum Element { // "content"
     Text(Text),
     Image(ImageSource),
+}
+
+#[derive(Eq, PartialEq, Clone, Debug, Hash)]
+pub struct ElementWithSize<F> {
+    pub element:Element,
+    pub size: Vector2<F>,
 }
 
 #[derive(Eq, PartialEq, Copy, Clone, Debug, Hash)]

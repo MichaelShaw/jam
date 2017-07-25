@@ -182,6 +182,7 @@ pub fn build_font(full_path: &Path, font_description: &FontDescription, image_si
                         u_max: (write_x + bb.max.x + 1) as u32,
                         v_min: image_size - (write_y + pixel_height) as u32,
                         v_max: image_size - (write_y) as u32,
+                        layer: 0,
                         texture_size: image_size,
                     }),
                     advance: advance,
