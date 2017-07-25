@@ -1,10 +1,10 @@
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Color {
-    r: u8,
-    g: u8,
-    b: u8,
-    a: u8,
+    pub r: u8,
+    pub g: u8,
+    pub b: u8,
+    pub a: u8,
 }
 
 pub const RED: Color = Color { r:255, g:0, b:0, a:255 };
@@ -12,8 +12,12 @@ pub const GREEN: Color = Color { r:0, g:255, b:0, a:255 };
 pub const YELLOW: Color = Color { r:255, g:255, b:0, a:255 };
 pub const BLUE: Color = Color { r:0, g:0, b:255, a:255 };
 pub const WHITE: Color = Color { r:255, g:255, b:255, a:255 };
+pub const GRAY: Color = Color { r:125, g:125, b:125, a:255 };
 pub const BLACK: Color = Color { r:0, g:0, b:0, a:255 };
 pub const PINK: Color = Color { r:255, g:105, b:180, a:255 };
+
+pub const ALL: [Color; 8] = [RED, GREEN, YELLOW, BLUE, WHITE, GRAY, BLACK, PINK];
+
 pub type ColorRaw = [u8; 4];
 pub type ColorFloatRaw = [f32; 4];
 

@@ -7,16 +7,19 @@ use gfx::Device;
 use gfx::traits::FactoryExt;
 use gfx_window_glutin;
 
-use Color;
+use gfx::texture::ImageInfoCommon;
+use gfx::format::R8_G8_B8_A8;
 
 use super::{Vertex, ColorFormat, DepthFormat, GeometryBuffer, Locals};
 use super::{pipe_blend, pipe_opaque, get_dimensions};
 
-use {input, JamError, JamResult};
-use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend, TextureRegion};
+use {input, JamError, JamResult, color, Color};
+use render::{FileResources, FileWatcher, TextureArrayDimensions, Uniforms, Blend, TextureRegion, GeometryTesselator};
 use font::FontDirectory;
 use {Dimensions, InputState};
 use glutin::GlContext;
+use camera::ui_projection;
+use render::down_size_m4;
 
 use image::DynamicImage;
 use notify::{RawEvent};
@@ -26,9 +29,15 @@ use aphid::HashMap;
 
 use ui::*;
 
-use cgmath::Vector2;
+use cgmath::{Vector2, vec3};
 
 pub type OpenGLRenderer = Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, gfx_device_gl::Factory, gfx_device_gl::Device>;
+
+#[derive(Copy, Clone, Eq, PartialEq, Debug)]
+pub enum TextureArraySource {
+    Primary,
+    UI,
+}
 
 pub struct Renderer<R, C, F, D> where R : gfx::Resources,
                                  C : gfx::CommandBuffer<R>,
@@ -66,6 +75,8 @@ pub struct UI<R> where R : gfx::Resources {
     pub texture_resource: gfx::handle::Texture<R, gfx::format::R8_G8_B8_A8>,
     pub texture_view: gfx::handle::ShaderResourceView<R, [f32; 4]>,
     pub elements: HashMap<ElementWithSize<i32>, RasterElement>,
+    pub tick: usize,
+    pub free_layers: Vec<u32>,
 }
 
 pub struct RasterElement {
@@ -186,9 +197,9 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
             println!("LOAD TEXTURES");
             let texture_load_result = self.file_resources.texture_directory.load().and_then(|texture_array_data| {
                 let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| {
-//                    let dyn_image = DynamicImage::ImageRgba8(img.clone()).flipv();
-//                    dyn_image.to_rgba().into_raw()
-                    img.clone().into_raw()
+                    let dyn_image = DynamicImage::ImageRgba8(img.clone()).flipv();
+                    dyn_image.to_rgba().into_raw()
+//                    img.clone().into_raw()
                 } ).collect();
                 let data : Vec<_> = images_raw.iter().map(|v| v.as_slice()).collect();
 
@@ -249,10 +260,14 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
 //        Ok(())
 //    }
 
-    pub fn draw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend) -> JamResult<()> {
-        let &(ref t, ref tv) = self.texture.as_ref().ok_or(JamError::NoTexture())?;
+    fn draw_raw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend, texture_array:TextureArraySource)  -> JamResult<()> {
+        let tv = match texture_array {
+            TextureArraySource::UI => &self.ui.texture_view,
+            TextureArraySource::Primary => self.texture.as_ref().map(|&(_, ref v)| v).ok_or(JamError::NoTexture())?,
+        };
 
-//        println!("draw geometry -> {:?}", geometry);
+//        let tv = self.texture.as_ref().map(|&(_, ref v)| v).ok_or(JamError::NoTexture())?;
+
         match blend {
             Blend::None => {
                 let opaque_pipe = self.pipelines.as_mut().ok_or(JamError::NoPipeline()).map(|p| &mut p.opaque )?;
@@ -272,7 +287,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                 self.encoder.draw(&geometry.slice, &opaque_pipe.pipeline, &opaque_data);
             },
             Blend::Add => {
-//                println!("no add pipeline atm")
+                //                println!("no add pipeline atm")
             },
             Blend::Alpha => {
                 let blend_pipe = self.pipelines.as_mut().ok_or(JamError::NoPipeline()).map(|p| &mut p.blend )?;
@@ -296,6 +311,10 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         Ok(())
     }
 
+    pub fn draw(&mut self, geometry: &GeometryBuffer<gfx_device_gl::Resources>, uniforms: Uniforms, blend:Blend) -> JamResult<()> {
+        self.draw_raw(geometry, uniforms, blend, TextureArraySource::Primary)
+    }
+
     pub fn draw_vertices(&mut self, vertices: &[Vertex], uniforms: Uniforms, blend:Blend) -> JamResult<GeometryBuffer<gfx_device_gl::Resources>> {
         let geometry = self.upload(vertices);
         let res = self.draw(&geometry, uniforms, blend);
@@ -310,8 +329,120 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
     }
 
     pub fn draw_view<Ev>(&mut self, view:&View<Ev>) -> JamResult<()> {
+        let tick = self.ui.tick;
+        let store_texture_size = self.ui.dimensions;
+        let mut vertices = Vec::new();
 
-        Ok(())
+        let tesselator = GeometryTesselator {
+            scale: vec3(1.0, 1.0, 1.0),
+            color: color::WHITE.float_raw(),
+        };
+
+        for (layer, rect_abs, (v_z, l_z)) in view.layer_iter() {
+            let size = rect_abs.size();
+            let sized_element = ElementWithSize {
+                element: layer.content.clone(),
+                size: size,
+            };
+
+            use std::collections::hash_map::Entry;
+
+            let (raster_translation, region) = match self.ui.elements.entry(sized_element) {
+                Entry::Occupied(mut oe) => {
+                    let re = oe.get_mut();
+                    re.last_used = tick;
+                    (re.translation, re.texture_region)
+                },
+                Entry::Vacant(mut ve) => {
+                    println!("RASTER -> {:?} @ {:?}", layer, tick);
+                    let (img, translation) = raster(&layer.content, size);
+                    let use_layer = self.ui.free_layers.pop().expect("a free layer");
+
+                    let region = TextureRegion {
+                        u_min: 0,
+                        u_max: img.width() as u32,
+                        v_min: 0,
+                        v_max: img.height() as u32,
+                        layer: use_layer as u32,
+                        texture_size: store_texture_size.width,
+                    };
+                    let re = RasterElement {
+                        translation: translation, // translation from requested origin to output area
+                        texture_region: region,
+                        last_used: tick,
+                    };
+
+                    // push the texture update
+                    println!("raster image dimensions {:?} use layer {:?}", img.dimensions(), use_layer);
+
+                    let mut image_info = ImageInfoCommon {
+                        xoffset: 0,
+                        yoffset: 0,
+                        zoffset: use_layer as u16,
+                        width: img.width() as u16,
+                        height: img.height() as u16,
+                        depth: 1,
+                        format: (),
+                        mipmap: 0,
+                    };
+
+                    println!("image info -> {:?}", image_info);
+
+                    let mut data : Vec<[u8; 4]> = img.into_raw().chunks(4).map(|sl| [sl[0], sl[1], sl[2], sl[3]]).collect();
+
+                    println!("data count -> {:?} first -> {:?}", data.len(), data.first());
+
+                    self.encoder.update_texture::<R8_G8_B8_A8, Srgba8>(
+                        &self.ui.texture_resource,
+                        None,
+                        image_info,
+                        &data,
+                    ).expect("updating the texture");
+
+                    ve.insert(re);
+                    (translation, region)
+                },
+            };
+
+            let position = raster_translation + rect_abs.min;
+            let z = (v_z as f64) * 1.0 + (l_z as f64) * 0.1;
+
+//            println!("position {:?}     raster region {:?}", position, region);
+
+            tesselator.draw_ui(&mut vertices, &region, position.x as f64, position.y as f64, 0.0, 1.0);
+        }
+
+//        for l in 0..8 {
+//            let region = TextureRegion {
+//                u_min: 0,
+//                u_max: 512,
+//                v_min: 0,
+//                v_max: 512,
+//                layer: l,
+//                texture_size: 512,
+//            };
+//            let scale = 0.10;
+//
+//            let x = 512.0 * scale * 1.1 * l as f64;
+//            let y = 0.0;
+//
+//            tesselator.draw_ui(&mut vertices, &region, x, y, 0.0, scale);
+//        }
+
+
+
+        // transform
+        let (pixel_width, pixel_height) = self.dimensions.pixels;
+        let transform = ui_projection(pixel_width as f64, pixel_height as f64);
+        let uniforms = Uniforms {
+            transform : down_size_m4(transform.into()),
+            color: color::WHITE,
+        };
+        let geo = self.upload(&vertices);
+
+        self.ui.tick += 1;
+
+        self.draw_raw(&geo, uniforms, Blend::None, TextureArraySource::UI)
     }
 }
 

@@ -65,7 +65,7 @@ impl App {
     fn run(&mut self) {
         let mut last_time = time::precise_time_ns();
         'main: loop {
-            let (dimensions, input_state) = self.renderer.begin_frame(color::PINK);
+            let (dimensions, input_state) = self.renderer.begin_frame(color::BLACK);
 
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000.0;
@@ -73,6 +73,8 @@ impl App {
             self.update(&input_state, dimensions, delta_time);
 
             let res = self.render();
+
+            self.renderer.finish_frame().expect("no errors");
 
             last_time = time;
             if input_state.close {
@@ -98,30 +100,8 @@ impl App {
 
     fn render(&mut self) -> JamResult<()> {
         let mut t = self.tesselator();
-//        let mut vertices = Vec::new();
 
-//        let mut frame = self.renderer.render(rgb(132, 193, 255))?;
-//
-////        let layer = 0;
-//        let scale = 1.0 / self.camera.viewport.scale() as f64;
-//        let texture_region = TextureRegion {
-//            u_min: 0,
-//            u_max: 128,
-//            v_min: 0,
-//            v_max: 128,
-//            texture_size: 1024,
-//        };
-//        t.color = color::WHITE.float_raw();
-//        t.draw_ui(&mut vertices, &texture_region, 0, 20.0, 20.0, 0.0, 1.0);
-//
-//        frame.draw_vertices(&vertices, Uniforms {
-//            transform : down_size_m4(self.camera.ui_projection().into()),
-//            color: color::WHITE,
-//        }, Blend::Alpha);
-//
-//        frame.draw_view(self.widget_runner.view());
-//
-//        frame.finish();
+        self.renderer.draw_view(&self.widget_runner.view());
 
         Ok(())
     }

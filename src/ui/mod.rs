@@ -5,12 +5,14 @@ pub mod render;
 pub mod view;
 pub mod event;
 pub mod layer;
+pub mod raster;
 
 pub use self::view::*;
 pub use self::component::*;
 pub use self::render::*;
 pub use self::event::*;
 pub use self::layer::*;
+pub use self::raster::*;
 
 use Color;
 use cgmath::{Vector2, BaseNum, vec2};

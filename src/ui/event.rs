@@ -11,6 +11,6 @@ pub enum MouseEvent {
 }
 
 pub fn events<Ev>(input: &InputState, last_input: &Option<InputState>, view: &View<Ev>) -> Vec<Ev> {
-    println!("generate input events for view");
+    // println!("generate input events for view");
     Vec::new()
 }

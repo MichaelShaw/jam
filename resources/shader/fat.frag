@@ -18,15 +18,13 @@ out vec4 f_color;
 void main() {
     vec4 albedo_colour = texture(u_texture, v_tex_coord) * v_color;
     
-    vec4 final_colour = albedo_colour; // * light;
-    final_colour.a = albedo_colour.a; // ignore light's alpha
+    vec4 final_colour = albedo_colour;
+    final_colour.a = albedo_colour.a;
 
    // if(final_colour.a < u_alpha_minimum) {
     //    discard;
    // }
     f_color = final_colour;
-    f_color = texture(u_texture, v_tex_coord);
-    // f_color = vec4(1.0, 0.0, 0.0, 1.0);
 }
 
 
