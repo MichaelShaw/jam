@@ -56,7 +56,7 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     let file_watcher = file_resources.watch();
     println!("post watch");
 
-    let ui_layers = 8;
+    let ui_layers = 16;
     let ui_store_dimensions = TextureArrayDimensions {
         width: 512,
         height: 512,

@@ -1,5 +1,7 @@
-use ui::{Rect, Layer, MouseEvent, ZLayer, Point2I, RectI, Text, Element};
+use ui::{Rect, Layer, MouseEvent, ZLayer, Point2I, RectI, Text, Element, Pattern, Source, ConstantColour, BorderMask};
 use cgmath::vec2;
+use {Color, as_rgba8};
+use image::{Rgba};
 
 use std::fmt;
 use std::fmt::Debug;
@@ -99,15 +101,31 @@ pub fn empty_view<Ev>(frame:RectI) -> View<Ev> {
 }
 
 
-pub fn label_view<Ev>(frame:RectI, text:String) -> View<Ev> {
-    let layer = Layer {
-        frame: RectI::with_size(frame.size()),
-        content: Element::Text(Text::new(text))
+pub fn colour_source(color:Color) -> Source {
+    Source::ConstantColour(ConstantColour { color: as_rgba8(color) })
+}
+
+pub fn label_view<Ev>(frame:RectI, text:String, text_color:Color, background_color:Color, border_color: Color) -> View<Ev> {
+    let origin_rect = RectI::with_size(frame.size());
+
+    let background_layer = Layer {
+        frame: origin_rect,
+        content: Element::Draw(Pattern::All, colour_source(background_color)),
     };
+    let border_layer = Layer {
+        frame: origin_rect,
+        content: Element::Draw(Pattern::Border(BorderMask { thickness: 4 }), colour_source(border_color)),
+    };
+    let text_layer = Layer {
+        frame: origin_rect.padded(4),
+        content: Element::Text(Text::new(text, text_color))
+    };
+
+
     View {
         frame: frame,
         on_event: None,
-        layers : vec![layer],
+        layers : vec![background_layer, border_layer, text_layer],
         sub_views: Vec::new(),
     }
 }
@@ -139,7 +157,7 @@ mod tests {
                     min: vec2(0, i * 30),
                     max: vec2(100, (i + 1) * 30),
                 },
-                content: Element::Text(Text::new("awesome".into())),
+                content: Element::Text(Text::new("awesome".into(), color::BLACK)),
             });
         }
 

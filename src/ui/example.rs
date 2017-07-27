@@ -65,7 +65,7 @@ impl App {
     fn run(&mut self) {
         let mut last_time = time::precise_time_ns();
         'main: loop {
-            let (dimensions, input_state) = self.renderer.begin_frame(color::BLACK);
+            let (dimensions, input_state) = self.renderer.begin_frame(rgb(210, 228, 237));
 
             let time = time::precise_time_ns();
             let delta_time = ((time - last_time) as f64) / 1_000_000.0;
@@ -95,7 +95,13 @@ impl App {
 
     #[allow(unused_variables)]
     fn update(&mut self, input_state:&InputState, dimensions:Dimensions, delta_time: Seconds) {
-        self.widget_runner.run(input_state.clone(), Vec::new());
+        let mut external_events = Vec::new();
+
+        if input_state.mouse.left_released() {
+            external_events.push(ExampleEvent::IncrementScoreA);
+        }
+
+        self.widget_runner.run(input_state.clone(), external_events);
     }
 
     fn render(&mut self) -> JamResult<()> {
@@ -109,7 +115,8 @@ impl App {
 
 #[derive(Clone, PartialEq, Eq, Debug)]
 pub enum ExampleEvent {
-
+    IncrementScoreA,
+    IncrementScoreB,
 }
 
 #[derive(Clone, PartialEq, Eq, Debug)]
@@ -127,8 +134,8 @@ impl ExampleState {
             score_a: 0,
             score_b: 1,
             period: 1,
-            time_remaining: "5:00".into(),
-            play_status: "Faceoff in 0:00".into(),
+            time_remaining: "5 00".into(),
+            play_status: "Faceoff in 0 00".into(),
         }
     }
 }
@@ -142,16 +149,38 @@ impl Widget for ExampleWidget {
     type Event = ExampleEvent;
 
     fn update(&self, state:&ExampleState, ev:&ExampleEvent) -> ExampleState {
-        state.clone()
+        let mut new_state = state.clone();
+        match ev {
+            &ExampleEvent::IncrementScoreA => new_state.score_a += 1,
+            &ExampleEvent::IncrementScoreB => new_state.score_b += 1,
+        }
+        new_state
     }
 
     fn view(&self, state:&ExampleState) -> View<ExampleEvent> {
         let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 140)));
 
-        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(100, 100)), state.score_a.to_string() ));
-        view.sub_views.push(label_view(RectI::new(vec2(100, 0), vec2(100, 100)), state.score_b.to_string() ));
-        view.sub_views.push(label_view(RectI::new(vec2(200, 0), vec2(100, 100)), format!("P{} {}", state.period, state.time_remaining)));
-        view.sub_views.push(label_view(RectI::new(vec2(0, 100), vec2(300, 40)), state.play_status.clone()));
+        let blue_outter = rgb(78, 117, 137);
+        let blue_inner = rgb(116, 181, 231);
+        let red_outter = rgb(255, 0, 0);
+        let red_inner = rgb(231, 116, 116);
+
+        let light_outter = rgb(255, 255, 255);
+        let light_inner = rgb(204, 204, 204);
+
+        let dark_outter = rgb(20, 20, 20);
+        let dark_inner = rgb(76, 76, 76);
+
+        let light_text = rgb(255,255,255);
+        let dark_text = rgb(51, 51, 51);
+
+        println!("generating view for state -> {:?}", state);
+
+
+        view.sub_views.push(label_view(RectI::new(vec2(0, 40), vec2(100, 100)), state.score_a.to_string(), light_text, blue_outter, blue_inner ));
+        view.sub_views.push(label_view(RectI::new(vec2(100, 40), vec2(100, 100)), state.score_b.to_string(), light_text, red_outter, red_inner));
+        view.sub_views.push(label_view(RectI::new(vec2(200, 40), vec2(100, 100)),  format!("P{} {}", state.period, state.time_remaining), dark_text, light_outter, light_inner));
+        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(300, 40)), state.play_status.clone(), light_text, dark_outter, dark_inner));
 
         view
     }

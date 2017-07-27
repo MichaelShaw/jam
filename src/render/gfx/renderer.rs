@@ -416,7 +416,25 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         };
         let geo = self.upload(&vertices);
 
+        let mut reclaim_elements : Vec<ElementWithSize<i32>> = Vec::new();
+
+        for (element, entry) in self.ui.elements.iter() {
+            if entry.last_used < self.ui.tick {
+                let freed_layer = entry.texture_region.layer;
+//                println!("reclaiming entry -> {:?}, freed layer {:?}", element, freed_layer);
+                self.ui.free_layers.push(freed_layer);
+                reclaim_elements.push(element.clone());
+            }
+        }
+
         self.ui.tick += 1;
+
+        if !reclaim_elements.is_empty() {
+            for e in &reclaim_elements {
+                self.ui.elements.remove(e);
+            }
+        }
+
 
         self.draw_raw(&geo, uniforms, Blend::Alpha, TextureArraySource::UI)
     }

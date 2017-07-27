@@ -45,6 +45,7 @@ impl<W> WidgetRunner<W> where W : Widget {
             if new_state != self.state {
                 println!("state modified!");
                 state_modified = true;
+                self.state = new_state;
             }
         }
         if state_modified {

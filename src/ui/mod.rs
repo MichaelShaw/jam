@@ -39,6 +39,13 @@ impl<F> Rect<F> where F: BaseNum {
         self.max - self.min
     }
 
+    pub fn padded(&self, n: F) -> Rect<F> {
+        Rect {
+            min: self.min + vec2(n, n),
+            max: self.max - vec2(n, n),
+        }
+    }
+
     pub fn zeroed(&self) -> Rect<F> {
         Rect {
             min: vec2(F::zero(), F::zero()),

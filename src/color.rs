@@ -1,3 +1,4 @@
+use image::Rgba;
 
 #[derive(Copy, Clone, Debug, Eq, PartialEq, Hash)]
 pub struct Color {
@@ -50,6 +51,10 @@ pub fn rgba(r:u8, g:u8, b:u8, a: u8) -> Color {
 
 pub fn rgb(r:u8, g:u8, b:u8) -> Color {
     Color { r:r, g:g, b:b, a: 255}
+}
+
+pub fn as_rgba8(color:Color) -> Rgba<u8> {
+    Rgba { data: color.raw() }
 }
 
 impl Color {

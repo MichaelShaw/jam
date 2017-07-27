@@ -3,12 +3,13 @@ pub mod text;
 
 pub use self::text::*;
 
-use super::{Element, ColourSource, Source, Pattern};
-use OurFont;
+use super::{Element, ColourSource, Source, Pattern, all_pull};
+use {OurFont, as_rgba8};
 use cgmath::{Vector2, vec2};
 use image::{RgbaImage, Rgba};
 use rusttype::{FontCollection, Scale, point, PositionedGlyph};
 use ui::pattern::Mask;
+use std::cmp::max;
 
 pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaImage, Vector2<i32>) { // secon
     let mut img = RgbaImage::new(size.x as u32, size.y as u32);
@@ -25,7 +26,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
 }*/
 
     for px in img.pixels_mut() {
-        *px = Rgba { data: [255, 255, 255, 255] };
+        *px = Rgba { data: [0, 0, 0, 0] };
     }
 
     match element {
@@ -34,12 +35,12 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
                 &Source::ConstantColour(ref cc) => Box::new(cc),
             };
             match pattern {
-                &Pattern::Rect(ref r) => r.pull(s, &mut img),
+                &Pattern::All => all_pull(s, &mut img),
                 &Pattern::Border(ref b) => b.pull(s, &mut img),
             }
         },
         &Element::Text(ref text) => {
-            let color = text.color;
+            let color = as_rgba8(text.color);
             if let Some(font) = fonts.first() {
                 let f = &font.font;
                 let scale = Scale { x: text.size as f32, y: text.size as f32 };
@@ -62,22 +63,26 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
                             let x = x as i32 + bb.min.x;
                             let y = y as i32 + bb.min.y;
 
-                            // height - 5 -
-//                            println!("write @ {:?} {:?}", x, y);
+                            let tx = x as u32;
+                            let ty = (height - 1 - y) as u32;
+                            let source = *img.get_pixel(tx, ty);
 
-                            let pixel_color = color.with_alpha(v);
-                            img.put_pixel(x as u32, (height - 1 - y) as u32, Rgba { data: pixel_color.raw() });
+                            let c_alpha = (255.0 * v) as u8;
+                            let new_alpha = max(c_alpha, source.data[3]);
+
+                            let mut c = color;
+                            c.data[3] = new_alpha;
+
+                            img.put_pixel(tx, ty, c);
                         });
                     }
                 }
             }
         },
         &Element::Image(ref img) => {
-
+            println!("no image element support yet");
         },
     }
 
     (img, vec2(0, 0)) // no fancy sizing for now
 }
-
-

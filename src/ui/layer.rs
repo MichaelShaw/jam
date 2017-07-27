@@ -13,7 +13,7 @@ pub struct Layer {
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
-pub enum Element { // "content"
+pub enum Element {
     Text(Text),
     Image(ImageSource),
     Draw(Pattern, Source),
@@ -41,10 +41,10 @@ pub struct Text {
 }
 
 impl Text {
-    pub fn new(text:String) -> Text {
+    pub fn new(text:String, color:Color) -> Text {
         Text {
             characters: text,
-            color: color::WHITE,
+            color: color,
             size: 25,
             horizontal_alignment: HorizontalAlignment::Left,
             vertical_alignment: VerticalAlignment::Top,
