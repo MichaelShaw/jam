@@ -6,6 +6,8 @@ pub mod view;
 pub mod event;
 pub mod layer;
 pub mod raster;
+pub mod pattern;
+pub mod source;
 
 pub use self::view::*;
 pub use self::component::*;
@@ -13,6 +15,8 @@ pub use self::render::*;
 pub use self::event::*;
 pub use self::layer::*;
 pub use self::raster::*;
+pub use self::pattern::*;
+pub use self::source::*;
 
 use Color;
 use cgmath::{Vector2, BaseNum, vec2};

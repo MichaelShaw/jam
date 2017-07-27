@@ -2,6 +2,8 @@ use super::RectI;
 use Color;
 use color;
 
+use ui::{Pattern, Source};
+
 use cgmath::Vector2;
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]
@@ -14,6 +16,7 @@ pub struct Layer {
 pub enum Element { // "content"
     Text(Text),
     Image(ImageSource),
+    Draw(Pattern, Source),
 }
 
 #[derive(Eq, PartialEq, Clone, Debug, Hash)]

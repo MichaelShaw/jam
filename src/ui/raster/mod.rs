@@ -3,11 +3,12 @@ pub mod text;
 
 pub use self::text::*;
 
-use super::Element;
+use super::{Element, ColourSource, Source, Pattern};
 use OurFont;
 use cgmath::{Vector2, vec2};
 use image::{RgbaImage, Rgba};
 use rusttype::{FontCollection, Scale, point, PositionedGlyph};
+use ui::pattern::Mask;
 
 pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaImage, Vector2<i32>) { // secon
     let mut img = RgbaImage::new(size.x as u32, size.y as u32);
@@ -28,6 +29,15 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
     }
 
     match element {
+        &Element::Draw(ref pattern, ref source) => {
+            let s : Box<&ColourSource> = match source {
+                &Source::ConstantColour(ref cc) => Box::new(cc),
+            };
+            match pattern {
+                &Pattern::Rect(ref r) => r.pull(s, &mut img),
+                &Pattern::Border(ref b) => b.pull(s, &mut img),
+            }
+        },
         &Element::Text(ref text) => {
             let color = text.color;
             if let Some(font) = fonts.first() {
@@ -43,8 +53,10 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
                         .map(|b| b.min.x as f32 + g.unpositioned().h_metrics().advance_width))
                     .next().unwrap_or(0.0).ceil() as usize;
 
-                println!("text raster width: {}, height: {}", width, pixel_height);
+//                println!("text \"{}\" raster width: {}, height: {}", text.characters, width, pixel_height);
+
                 for g in glyphs {
+//                    println!("glyph pos -> {:?} bb -> {:?}", g.position(), g.pixel_bounding_box());
                     if let Some(bb) = g.pixel_bounding_box() {
                         g.draw(|x, y, v| {
                             let x = x as i32 + bb.min.x;
@@ -54,7 +66,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
 //                            println!("write @ {:?} {:?}", x, y);
 
                             let pixel_color = color.with_alpha(v);
-                            img.put_pixel(x as u32, y as u32, Rgba { data: pixel_color.raw() });
+                            img.put_pixel(x as u32, (height - 1 - y) as u32, Rgba { data: pixel_color.raw() });
                         });
                     }
                 }
@@ -65,9 +77,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
         },
     }
 
-
-
-    (img, vec2(0, 0))
+    (img, vec2(0, 0)) // no fancy sizing for now
 }
 
 
