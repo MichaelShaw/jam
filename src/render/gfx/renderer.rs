@@ -33,6 +33,7 @@ use cgmath::{Vector2, vec3};
 
 use OurFont;
 
+pub type OpenGLResources = gfx_device_gl::Resources;
 pub type OpenGLRenderer = Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, gfx_device_gl::Factory, gfx_device_gl::Device>;
 
 #[derive(Copy, Clone, Eq, PartialEq, Debug)]
