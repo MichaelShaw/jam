@@ -18,10 +18,11 @@ pub use self::raster::*;
 pub use self::pattern::*;
 pub use self::source::*;
 
-use Color;
+use {Color, Dimensions};
 use cgmath::{Vector2, BaseNum, vec2};
 use image;
 use std::fmt::Debug;
+
 
 pub type ZLayer = i32;
 pub type Size2 = Vector2<i32>;
@@ -43,6 +44,20 @@ impl<F> Rect<F> where F: BaseNum {
         Rect {
             min: self.min + vec2(n, n),
             max: self.max - vec2(n, n),
+        }
+    }
+
+    pub fn bottom(&self, n : F) -> Rect<F> {
+        Rect {
+            min: self.min,
+            max: vec2(self.max.x, self.min.y + n),
+        }
+    }
+
+    pub fn top(&self, n : F) -> Rect<F> {
+        Rect {
+            min: vec2(self.min.x, self.max.y - n),
+            max: self.max,
         }
     }
 
@@ -81,7 +96,7 @@ pub trait Widget {
     type State : Eq;
     type Event : Debug;
     fn update(&self, st:&Self::State, ev:&Self::Event) -> Self::State;
-    fn view(&self, st:&Self::State) -> View<Self::Event>;
+    fn view(&self, st:&Self::State, dimensions:Dimensions) -> View<Self::Event>;
 }
 
 

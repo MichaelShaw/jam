@@ -3,15 +3,17 @@ use super::{View, Layer, Element};
 
 use cgmath::Vector2;
 use aphid::HashMap;
-use InputState;
+use {InputState, Dimensions};
+
 
 use ui::{self, RectI, ZLayer, Widget, Size2, Point2I};
 
 pub struct WidgetRunner<W> where W : Widget {
     widget: W,
-    state: W::State,
+    pub state: W::State,
     view: View<W::Event>,
     last_input: Option<InputState>,
+    last_dimensions: Dimensions,
 }
 
 impl<W> WidgetRunner<W> where W : Widget {
@@ -19,25 +21,26 @@ impl<W> WidgetRunner<W> where W : Widget {
         &self.view
     }
 
-    pub fn new(widget: W, initial_state: W::State) -> WidgetRunner<W> {
-        let view = widget.view(&initial_state);
+    pub fn new(widget: W, initial_state: W::State, dimensions:Dimensions) -> WidgetRunner<W> {
+        let view = widget.view(&initial_state, dimensions);
         WidgetRunner {
             widget,
             state: initial_state,
             view: view,
             last_input: None,
+            last_dimensions: dimensions,
         }
     }
 
-    pub fn run(&mut self, input: InputState, external_events: Vec<W::Event>) {
+    pub fn run(&mut self, input: InputState, external_events: Vec<W::Event>, dimensions:Dimensions) {
         let mut all_events = external_events;
         let mut input_events = ui::events(&input, &self.last_input, &self.view);
         all_events.append(&mut input_events);
-        self.update(all_events);
+        self.update(all_events, dimensions);
         self.last_input = Some(input);
     }
 
-    pub fn update(&mut self, events: Vec<W::Event>) {
+    pub fn update(&mut self, events: Vec<W::Event>, dimensions:Dimensions) {
         let mut state_modified = false;
         for ev in events {
             println!("applying event -> {:?}", ev);
@@ -48,9 +51,10 @@ impl<W> WidgetRunner<W> where W : Widget {
                 self.state = new_state;
             }
         }
-        if state_modified {
+        if state_modified || dimensions != self.last_dimensions {
             println!("regenerating view");
-            self.view = self.widget.view(&self.state);
+            self.view = self.widget.view(&self.state, dimensions);
+            self.last_dimensions = dimensions;
         }
     }
 }

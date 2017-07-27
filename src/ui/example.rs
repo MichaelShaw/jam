@@ -30,22 +30,24 @@ pub fn run() {
 
     let renderer = construct_opengl_renderer(file_resources, (800, 600), true, "ui example").expect("a renderer");
 
+    let dimensions = Dimensions {
+        pixels: (800,600),
+        points: (800,600),
+    };
+
     let mut app = App {
         name: "mixalot".into(),
         camera: Camera {
             at: Vec3::new(0.0, 0.0, 0.0),
             pitch: Rad(PI / 4.0_f64),
-            viewport: Dimensions {
-                pixels: (800,600),
-                points: (800,600),
-            },
+            viewport: dimensions,
             points_per_unit: 16.0 * 1.0,
         },
         zoom: 1.0,
         points_per_unit: 16.0,
         n: 0, // frame counter
         renderer: renderer,
-        widget_runner: WidgetRunner::new(ExampleWidget {}, ExampleState::sample()),
+        widget_runner: WidgetRunner::new(ExampleWidget {}, ExampleState::sample(), dimensions),
     };
     app.run()
 }
@@ -101,7 +103,7 @@ impl App {
             external_events.push(ExampleEvent::IncrementScoreA);
         }
 
-        self.widget_runner.run(input_state.clone(), external_events);
+        self.widget_runner.run(input_state.clone(), external_events, dimensions);
     }
 
     fn render(&mut self) -> JamResult<()> {
@@ -157,7 +159,7 @@ impl Widget for ExampleWidget {
         new_state
     }
 
-    fn view(&self, state:&ExampleState) -> View<ExampleEvent> {
+    fn view(&self, state:&ExampleState, dimensions:Dimensions) -> View<ExampleEvent> {
         let mut view = empty_view(RectI::new(vec2(20, 20), vec2(300, 140)));
 
         let blue_outter = rgb(78, 117, 137);
@@ -177,10 +179,10 @@ impl Widget for ExampleWidget {
         println!("generating view for state -> {:?}", state);
 
 
-        view.sub_views.push(label_view(RectI::new(vec2(0, 40), vec2(100, 100)), state.score_a.to_string(), light_text, blue_outter, blue_inner ));
-        view.sub_views.push(label_view(RectI::new(vec2(100, 40), vec2(100, 100)), state.score_b.to_string(), light_text, red_outter, red_inner));
-        view.sub_views.push(label_view(RectI::new(vec2(200, 40), vec2(100, 100)),  format!("P{} {}", state.period, state.time_remaining), dark_text, light_outter, light_inner));
-        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(300, 40)), state.play_status.clone(), light_text, dark_outter, dark_inner));
+        view.sub_views.push(label_view(RectI::new(vec2(0, 40), vec2(100, 100)), state.score_a.to_string(), light_text, Some(blue_outter), Some(blue_inner)));
+        view.sub_views.push(label_view(RectI::new(vec2(100, 40), vec2(100, 100)), state.score_b.to_string(), light_text, Some(red_outter), Some(red_inner)));
+        view.sub_views.push(label_view(RectI::new(vec2(200, 40), vec2(100, 100)),  format!("P{} {}", state.period, state.time_remaining), dark_text, Some(light_outter), Some(light_inner)));
+        view.sub_views.push(label_view(RectI::new(vec2(0, 0), vec2(300, 40)), state.play_status.clone(), light_text, Some(dark_outter), Some(dark_inner)));
 
         view
     }

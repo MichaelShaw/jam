@@ -25,6 +25,8 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
     pub vertical_alignment: VerticalAlignment,
 }*/
 
+    println!("raster image size {:?} x {:?}", width, height);
+
     for px in img.pixels_mut() {
         *px = Rgba { data: [0, 0, 0, 0] };
     }
@@ -54,7 +56,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
                         .map(|b| b.min.x as f32 + g.unpositioned().h_metrics().advance_width))
                     .next().unwrap_or(0.0).ceil() as usize;
 
-//                println!("text \"{}\" raster width: {}, height: {}", text.characters, width, pixel_height);
+                println!("text \"{}\" text raster {:?} x {:?}", text.characters, width, pixel_height);
 
                 for g in glyphs {
 //                    println!("glyph pos -> {:?} bb -> {:?}", g.position(), g.pixel_bounding_box());
@@ -65,15 +67,21 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
 
                             let tx = x as u32;
                             let ty = (height - 1 - y) as u32;
-                            let source = *img.get_pixel(tx, ty);
 
-                            let c_alpha = (255.0 * v) as u8;
-                            let new_alpha = max(c_alpha, source.data[3]);
+                            if tx < 0 || tx > width as u32 || ty < 0 || ty > height as u32 {
+                                println!("starting x y was {:?} {:?}", x, y);
+                                println!("text attempting to write to invalid location ({:?}, {:?}) but space is {:?} x {:?}", tx, ty, width, height);
+                            } else {
+                                let source = *img.get_pixel(tx, ty);
 
-                            let mut c = color;
-                            c.data[3] = new_alpha;
+                                let c_alpha = (255.0 * v) as u8;
+                                let new_alpha = max(c_alpha, source.data[3]);
 
-                            img.put_pixel(tx, ty, c);
+                                let mut c = color;
+                                c.data[3] = new_alpha;
+
+                                img.put_pixel(tx, ty, c);
+                            }
                         });
                     }
                 }

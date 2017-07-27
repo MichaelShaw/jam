@@ -35,6 +35,7 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
         .with_dimensions(width, height);
     use glutin::{GlRequest, Api};
     let context = glutin::ContextBuilder::new()
+        .with_srgb(false)
         .with_gl(GlRequest::Specific(Api::OpenGl, (3, 3)))
         .with_vsync(true);
 
@@ -47,8 +48,14 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     println!("post build");
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
+    use gfx::texture;
     println!("post encoder");
-    let sampler = factory.create_sampler_linear();
+    let sampler_info = texture::SamplerInfo::new(
+        texture::FilterMethod::Scale,
+        texture::WrapMode::Clamp,
+    );
+
+    let sampler = factory.create_sampler(sampler_info);
 
     let dimensions = get_dimensions(&window);
 
@@ -57,9 +64,11 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
     println!("post watch");
 
     let ui_layers = 16;
+    let ui_size = 1024;
+
     let ui_store_dimensions = TextureArrayDimensions {
-        width: 512,
-        height: 512,
+        width: 1024,
+        height: 1024,
         layers: ui_layers,
     };
 

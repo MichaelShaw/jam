@@ -153,6 +153,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
 
         // clear
         if !close_requested {
+//            self.screen_colour_target = 4;
             self.encoder.clear(&self.screen_colour_target, clear_color.float_raw());
             self.encoder.clear_depth(&self.screen_depth_target, 1.0);
 //            let ad = self.screen_colour_target.get_dimensions();
@@ -211,6 +212,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                 let kind = texture_kind_for(&texture_array_data.dimensions);
 
                 println!("kind -> {:?}", kind);
+//                let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Rgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
                 let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Srgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
 
                 Ok((texture, texture_view))

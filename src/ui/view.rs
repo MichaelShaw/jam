@@ -105,27 +105,36 @@ pub fn colour_source(color:Color) -> Source {
     Source::ConstantColour(ConstantColour { color: as_rgba8(color) })
 }
 
-pub fn label_view<Ev>(frame:RectI, text:String, text_color:Color, background_color:Color, border_color: Color) -> View<Ev> {
+pub fn label_view<Ev>(frame:RectI, text:String, text_color:Color, background_color:Option<Color>, border_color: Option<Color>) -> View<Ev> {
     let origin_rect = RectI::with_size(frame.size());
 
-    let background_layer = Layer {
-        frame: origin_rect,
-        content: Element::Draw(Pattern::All, colour_source(background_color)),
-    };
-    let border_layer = Layer {
-        frame: origin_rect,
-        content: Element::Draw(Pattern::Border(BorderMask { thickness: 4 }), colour_source(border_color)),
-    };
+    let mut layers = Vec::new();
+
+    if let Some(color) = background_color {
+        let background_layer = Layer {
+            frame: origin_rect,
+            content: Element::Draw(Pattern::All, colour_source(color)),
+        };
+        layers.push(background_layer);
+    }
+    if let Some(color) = border_color {
+        let border_layer = Layer {
+            frame: origin_rect,
+            content: Element::Draw(Pattern::Border(BorderMask { thickness: 4 }), colour_source(color)),
+        };
+        layers.push(border_layer);
+    }
+
     let text_layer = Layer {
         frame: origin_rect.padded(4),
         content: Element::Text(Text::new(text, text_color))
     };
-
+    layers.push(text_layer);
 
     View {
         frame: frame,
         on_event: None,
-        layers : vec![background_layer, border_layer, text_layer],
+        layers : layers,
         sub_views: Vec::new(),
     }
 }
