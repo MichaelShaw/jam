@@ -73,6 +73,18 @@ pub struct Renderer<R, C, F, D> where R : gfx::Resources,
     pub ui: UI<R>,
 }
 
+fn decode_color(c: Color) -> [f32; 4] {
+    let f = |xu: u8| {
+        let x = (xu as f32)  / 255.0;
+        if x > 0.04045 {
+            ((x + 0.055) / 1.055).powf(2.4)
+        } else {
+            x / 12.92
+        }
+    };
+    [f(c.r), f(c.g), f(c.b), 0.0]
+}
+
 pub struct UI<R> where R : gfx::Resources {
     pub dimensions: TextureArrayDimensions,
     pub texture_resource: gfx::handle::Texture<R, gfx::format::R8_G8_B8_A8>,
@@ -155,7 +167,8 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         // clear
         if !close_requested {
 //            self.screen_colour_target = 4;
-            self.encoder.clear(&self.screen_colour_target, clear_color.float_raw());
+            let decoded = decode_color(clear_color);
+            self.encoder.clear(&self.screen_colour_target, decoded);
             self.encoder.clear_depth(&self.screen_depth_target, 1.0);
 //            let ad = self.screen_colour_target.get_dimensions();
 //            println!("internal dimensions -> {:?}", ad);
