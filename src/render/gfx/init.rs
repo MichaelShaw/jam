@@ -28,7 +28,7 @@ pub fn get_dimensions(window: &glutin::GlWindow) -> Dimensions { // make this op
 
 pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32, u32), vsync: bool, window_name: &str) -> JamResult<OpenGLRenderer> {
     let (width, height) = dimensions;
-    println!("pre events");
+//    println!("pre events");
     let mut events_loop = glutin::EventsLoop::new();
     let window_config = glutin::WindowBuilder::new()
         .with_title(window_name.to_string())
@@ -42,14 +42,14 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
 
     //    context = 4;
 
-    println!("pre build");
+//    println!("pre build");
     let (window, mut device, mut factory, mut main_color, mut main_depth) = gfx_window_glutin::init::<ColorFormat, DepthFormat>(window_config, context, &events_loop);
 
-    println!("post build");
+//    println!("post build");
     let mut encoder: gfx::Encoder<_, _> = factory.create_command_buffer().into();
 
     use gfx::texture;
-    println!("post encoder");
+//    println!("post encoder");
     let sampler_info = texture::SamplerInfo::new(
         texture::FilterMethod::Scale,
         texture::WrapMode::Clamp,
@@ -59,9 +59,9 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
 
     let dimensions = get_dimensions(&window);
 
-    println!("pre watch");
+//    println!("pre watch");
     let file_watcher = file_resources.watch();
-    println!("post watch");
+//    println!("post watch");
 
     let ui_layers = 16;
     let ui_size = 1024;
@@ -111,7 +111,7 @@ pub fn construct_opengl_renderer(file_resources: FileResources, dimensions: (u32
 
     let fonts = load_fonts_in_path(file_resources.font_directory.path.as_path())?;
 
-    println!("ok how many loaded fonts -> {:?}", fonts.len());
+//    println!("ok how many loaded fonts -> {:?}", fonts.len());
 
     let ui = UI {
         dimensions: ui_store_dimensions,

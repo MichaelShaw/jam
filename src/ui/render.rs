@@ -43,16 +43,16 @@ impl<W> WidgetRunner<W> where W : Widget {
     pub fn update(&mut self, events: Vec<W::Event>, dimensions:Dimensions) {
         let mut state_modified = false;
         for ev in events {
-            println!("applying event -> {:?}", ev);
+//            println!("applying event -> {:?}", ev);
             let new_state = self.widget.update(&self.state, &ev);
             if new_state != self.state {
-                println!("state modified!");
+//                println!("state modified!");
                 state_modified = true;
                 self.state = new_state;
             }
         }
         if state_modified || dimensions != self.last_dimensions {
-            println!("regenerating view");
+//            println!("regenerating view");
             self.view = self.widget.view(&self.state, dimensions);
             self.last_dimensions = dimensions;
         }
