@@ -25,7 +25,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
     pub vertical_alignment: VerticalAlignment,
 }*/
 
-    println!("raster image size {:?} x {:?}", width, height);
+//    println!("raster image size {:?} x {:?}", width, height);
 
     for px in img.pixels_mut() {
         *px = Rgba { data: [0, 0, 0, 0] };
@@ -56,7 +56,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
                         .map(|b| b.min.x as f32 + g.unpositioned().h_metrics().advance_width))
                     .next().unwrap_or(0.0).ceil() as usize;
 
-                println!("text \"{}\" text raster {:?} x {:?}", text.characters, width, pixel_height);
+//                println!("text \"{}\" text raster {:?} x {:?}", text.characters, width, pixel_height);
 
                 for g in glyphs {
 //                    println!("glyph pos -> {:?} bb -> {:?}", g.position(), g.pixel_bounding_box());
@@ -88,7 +88,7 @@ pub fn raster(element:&Element, size: Vector2<i32>, fonts: &[OurFont]) -> (RgbaI
             }
         },
         &Element::Image(ref img) => {
-            println!("no image element support yet");
+//            println!("no image element support yet");
         },
     }
 
