@@ -153,9 +153,9 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         }
 
         if resize {
-            println!("resize, PRE -> {:?}", get_dimensions(&self.window));
+//            println!("resize, PRE -> {:?}", get_dimensions(&self.window));
             gfx_window_glutin::update_views(&self.window, &mut self.screen_colour_target, &mut self.screen_depth_target);
-            println!("POST -> {:?}", get_dimensions(&self.window));
+//            println!("POST -> {:?}", get_dimensions(&self.window));
         }
 
         self.input_state = input::produce(&self.input_state, &events);
@@ -181,7 +181,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         let (reload_program, reload_texture) = check_reload(&self.file_watcher.change_events, &self.file_resources);
 
         if reload_program || self.pipelines.is_none() {
-            println!("LOAD PIPELINES");
+//            println!("LOAD PIPELINES");
             let pipeline_load_result = self.file_resources.shader_pair.load().and_then( |shader_data| {
                 let opaque_pso = self.factory.create_pipeline_simple(
                     &shader_data.vertex_data,
@@ -214,7 +214,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
         }
 
         if reload_texture || self.texture.is_none() {
-            println!("LOAD TEXTURES");
+//            println!("LOAD TEXTURES");
             let texture_load_result = self.file_resources.texture_directory.load().and_then(|texture_array_data| {
                 let images_raw : Vec<_> = texture_array_data.images.iter().map(|img| {
                     let dyn_image = DynamicImage::ImageRgba8(img.clone()).flipv();
@@ -225,7 +225,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
 
                 let kind = texture_kind_for(&texture_array_data.dimensions);
 
-                println!("kind -> {:?}", kind);
+//                println!("kind -> {:?}", kind);
 //                let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Rgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
                 let (texture, texture_view) = self.factory.create_texture_immutable_u8::<Srgba8>(kind, data.as_slice()).map_err(JamError::CombinedGFXError)?;
 
@@ -375,7 +375,7 @@ impl<F> Renderer<gfx_device_gl::Resources, gfx_device_gl::CommandBuffer, F, gfx_
                     (re.translation, re.texture_region)
                 },
                 Entry::Vacant(mut ve) => {
-                    println!("RASTER -> {:?} @ {:?}", layer, tick);
+//                    println!("RASTER -> {:?} @ {:?}", layer, tick);
                     let (img, translation) = raster(&layer.content, size, self.ui.fonts.as_slice());
                     let use_layer = self.ui.free_layers.pop().expect("a free layer");
 
